@@ -10,22 +10,33 @@ type hit =
   | Miss
   | Unknown
 
-type ship = 
+(** types are defiend as part of the historical game *)
+type stype = 
   | Battleship
-  | AircraftCarrier
+  | AircraftCarrier 
   | Destroyer
   | Cruiser
   | PTBoat
   | Submarine
 
-let ship_length ship = 
-  match ship with
-  | Battleship -> 4
-  | AircraftCarrier -> 5
-  | Destroyer -> 3
-  | Cruiser -> 3
-  | PTBoat -> 2
-  | Submarine -> 2
+exception OutofBounds
+exception 
+
+  (**type [ship] is defined by [name]: string as the name of the ship, 
+     [hits]: tuple of int * int, as the first one defining hits received and the 
+     second as the length of the ship, and 
+     [stype] as stype to define the type of the ship *)
+type ship = {name: string; hits: int * int; stype: stype}
+
+
+(* let ship_length ship = 
+   match ship with
+   | Battleship -> 4
+   | AircraftCarrier -> 5
+   | Destroyer -> 3
+   | Cruiser -> 3
+   | PTBoat -> 2
+   | Submarine -> 2 *)
 
 type tile = 
   | Occupied of ship
@@ -59,6 +70,7 @@ let mem matrix x y =
   | Unoccupied -> None
   | Occupied s -> Some s
 
+(**todo occupied or not *)
 let insert matrix x y ship = 
   matrix.(x).(y) <- Occupied ship
 
@@ -73,6 +85,7 @@ let check_bounds x0 x1 y0 y1 =
   coordinate_lst |> List.for_all (fun elt -> elt < n_rows && elt >= 0) &&
   (x0 < x1) && (y0 < y1)
 
+(**only write head and get the legth from ship type *)
 let check_hor_vert x0 x1 y0 y1 = 
   (x0 - x1) = 0 || (y0 - y1) = 0
 
@@ -103,11 +116,8 @@ let check_unoccupied matrix orientation =
     (--) y0 y1 |> List.for_all (fun y -> matrix.(x).(y) = Unoccupied)
 
 let place_ship ship matrix x0 x1 y0 y1 = 
-
-
   match ship with
   | Battleship -> 
-
   | AircraftCarrier -> 
   | Destroyer -> 
   | Cruiser -> 
