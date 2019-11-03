@@ -38,8 +38,10 @@ type ships =
 type t = {
   current_player : player;
   next_player    : player;
+  player_1_ship_placement : Battleship.ship;
   player_1 : plyr_target_data;
   player_1_ships_found : ships list;
+  player_2_ship_placement : Battleship.ship;
   player_2 : plyr_target_data;
   player_2_ships_found : ships list;
 }
@@ -113,11 +115,23 @@ let get_player_guess (s : t) (x : int) (y : int) =
   | Player2 _ -> 
     ((s.player_2 |> List.nth) y |> List.nth) x
 
-let get_ships_sunk (s : t) ()
+let get_ships_sunk (s : t) (player : string) (player_ship_locations) = 
+
+
 
 type victory = 
   | Winner of name
   | Continue
+
+let get_current_player (s : t) : string = 
+  match s.current_player with
+  | Player1 s -> s
+  | Player2 s -> s
+
+let get_next_player (s : t) : string = 
+  match s.next_player with
+  | Player1 s -> s
+  | Player2 s -> s
 
 (** [victory s] is [Winner player]
     where [player] is the name of the player who won 
@@ -127,11 +141,11 @@ type victory =
     REQUIRES: [victory s] must be applied after every turn cycle to give 
               the champion at the first instance, otherwise it will
               give the wrong champgion. *)
-let victory (s : t) : victory = 
+let update_victory (s : t) : victory = 
   match s.current_player with
   | Player1 name -> 
-    if List.length s.player_1_ships_found = c_NUM_SHIPS then Winner name 
-    else Continue
+    if List.length s.player_1_ships_found = c_NUM_SHIPS then true 
+    else false
   | Player2 name -> 
-    if List.length s.player_2_ships_found = c_NUM_SHIPS then Winner name 
-    else Continue
+    if List.length s.player_2_ships_found = c_NUM_SHIPS then true 
+    else false
