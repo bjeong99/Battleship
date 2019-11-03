@@ -24,6 +24,7 @@ type command =
   | Remove of object_phrase
   | Inventory
   | Remaining of object_phrase
+  | Finished
   | Quit
 
 (** Raised when an empty command is parsed. *)
