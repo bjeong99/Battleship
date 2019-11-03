@@ -76,11 +76,44 @@ let init_state (starting_player : string) (following_player : string) = {
 let update_player (s : t) : t = 
   {s with current_player = s.next_player; next_player = s.current_player;}
 
-let update_player_guesses (s : t) : t = 
+(** [change_index lst acc pos] is the new list with 
+    element at [pos] position incremented up by 1. 
+    Raises: [Failure pos too big] if [pos] is not a 
+    position in [lst].
+    Requires: [pos] is indexed from 0.*)
+let rec change_index elt lst acc pos = 
+  match pos, lst with
+  | 0, [] -> failwith "x pos too big"
+  | 0, h :: t -> List.rev_append acc ((elt) :: t)
+  | n, [] -> failwith "x pos too big"
+  | n, h :: t -> change_index elt t (h :: acc) (pos - 1)
+
+let rec change_matrix_index elt matrix acc x y =
+  match y, matrix with
+  | 0, [] -> failwith "y row value too big"
+  | 0, h :: t -> List.rev_append acc (change_index elt h [] x :: t)
+  | n, [] -> failwith "y row value too big"
+  | n, h :: t -> change_matrix_index elt t (h :: acc) x (y - 1)
+
+let insert_array x y arr value = 
+  arr.(y).(x) <- value;
+  arr
+
+let update_player_guesses (s : t) (x : int) (y :int) (new_elt : tile_status) : t = 
   match s.current_player with
   | Player1 _ -> 
-
+    {s with player_1 = change_matrix_index new_elt s.player_1 [] (x - 1) (y - 1)}
   | Player2 _ -> 
+    {s with player_2 = change_matrix_index new_elt s.player_2 [] (x - 1) (y - 1)}
+
+let get_player_guess (s : t) (x : int) (y : int) = 
+  match s.current_player with
+  | Player1 _ -> 
+    ((s.player_1 |> List.nth) y |> List.nth) x
+  | Player2 _ -> 
+    ((s.player_2 |> List.nth) y |> List.nth) x
+
+let get_ships_sunk (s : t) ()
 
 type victory = 
   | Winner of name

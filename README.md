@@ -19,3 +19,4 @@
 - everything constant
 - ship locations
    - when inserting, check if Out of Bounds
+
