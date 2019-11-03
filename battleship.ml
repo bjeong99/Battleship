@@ -10,33 +10,81 @@ type hit =
   | Miss
   | Unknown
 
+type orientation =
+  | Vertical
+  | Horizontal
+
 (** types are defiend as part of the historical game *)
 type stype = 
   | Battleship
-  | AircraftCarrier 
+  | AircraftCarrier
   | Destroyer
   | Cruiser
-  | PTBoat
   | Submarine
 
 exception OutofBounds
-exception 
+exception OccupiedBox
+exception OutofShips
+exception InvalidOrientation
 
-  (**type [ship] is defined by [name]: string as the name of the ship, 
-     [hits]: tuple of int * int, as the first one defining hits received and the 
-     second as the length of the ship, and 
-     [stype] as stype to define the type of the ship *)
-type ship = {name: string; hits: int * int; stype: stype}
+(**type [ship] is defined by [name]: string as the name of the ship, 
+   [hits]: tuple of int * int, as the first one defining hits received and the 
+   second as the length of the ship, and 
+   [stype] as stype to define the type of the ship *)
+type ship = {
+  name: string; 
+  hits: int * int; 
+  stype: stype; 
+  placed: bool}
 
+let ship_length ship = 
+  match ship.stype with
+  | Battleship -> 4
+  | AircraftCarrier -> 5
+  | Destroyer -> 3
+  | Cruiser -> 3
+  | Submarine -> 2
 
-(* let ship_length ship = 
-   match ship with
-   | Battleship -> 4
-   | AircraftCarrier -> 5
-   | Destroyer -> 3
-   | Cruiser -> 3
-   | PTBoat -> 2
-   | Submarine -> 2 *)
+let ship_number ship = 
+  match ship.stype with
+  | Battleship -> 2
+  | AircraftCarrier -> 1
+  | Destroyer -> 2
+  | Cruiser -> 2
+  | Submarine -> 3
+
+(**[init_ships] is the list of ships that the players have at the beginning
+   of the game, each player have two battleships, one aircraft carrier, two
+   destroyers, two cruisers and one submarine*)
+let init_ships =
+  let bs1 = {name = "Battleship_1"; hits = (0 , 4); stype = Battleship; 
+             placed = false}; in 
+  let bs2 = {name = "Battleship_2"; hits = (0 , 4); stype = Battleship; 
+             placed = false}; in 
+  let ac = {name = "Air_Craft_Carrier"; hits = (0 , 5); stype = AircraftCarrier; 
+            placed = false}; in 
+  let d1 = {name = "Destroyer_1"; hits = (0 , 3); stype = Destroyer; 
+            placed = false}; in 
+  let d2 = {name = "Destroyer_2"; hits = (0 , 3); stype = Destroyer; 
+            placed = false}; in 
+  let c1 = {name = "Cruiser_1"; hits = (0 , 3); stype = Cruiser; 
+            placed = false}; in 
+  let c2 = {name = "Cruiser_2"; hits = (0 , 3); stype = Cruiser; 
+            placed = false}; in 
+  let sm1 = {name = "Submarine_1"; hits = (0 , 2); stype = Submarine; 
+             placed = false}; in 
+  let sm2 = {name = "Submarine_2"; hits = (0 , 2); stype = Submarine; 
+             placed = false}; in 
+  let sm3 = {name = "Submarine_3"; hits = (0 , 2); stype = Submarine; 
+             placed = false}; in
+
+  bs1::bs2::ac::d1::d2::c1::c2::sm1::sm2::sm3::[]
+
+(** [check_placement] checks the list of [init_ships]*)
+let rec check_placement init_ships =
+  match init_ships with
+  |[] -> true
+  |h::t -> if h.placed = true then check_placement t else false
 
 type tile = 
   | Occupied of ship
@@ -70,9 +118,29 @@ let mem matrix x y =
   | Unoccupied -> None
   | Occupied s -> Some s
 
-(**todo occupied or not *)
-let insert matrix x y ship = 
-  matrix.(x).(y) <- Occupied ship
+(* fix this *)
+let insert_horizontal matrix head_loc ship =
+  matrix.(head_loc).(ship_length ship) <- Occupied ship
+
+(* fix this *)
+let insert_vertical matrix head_loc ship =
+  matrix.(head_loc).(ship_length ship) <- Occupied ship
+
+let get_orientation orientation= 
+  match orientation with
+  | "h" -> Horizontal
+  | "v" -> Vertical
+  | _ -> raise InvalidOrientation
+
+
+(** make function to show what ship is at that location*)
+(**where all ships are placed, at each location at in the array shows what ship there is in that location *)
+
+(**TODO: check if occupied or not before placing*)
+let insert matrix head_loc orientation ship = 
+  match (get_orientation orientation) with
+  | Vertical -> insert_vertical matrix head_loc ship
+  | Horizontal -> insert_horizontal matrix head_loc ship
 
 let search_guesses matrix x y = 
   matrix.(x).(y)
