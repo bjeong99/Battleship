@@ -38,8 +38,10 @@ type ships =
 type t = {
   current_player : player;
   next_player    : player;
+  player_1_ship_placement : Battleship.ship;
   player_1 : plyr_target_data;
   player_1_ships_found : ships list;
+  player_2_ship_placement : Battleship.ship;
   player_2 : plyr_target_data;
   player_2_ships_found : ships list;
 }
@@ -76,15 +78,60 @@ let init_state (starting_player : string) (following_player : string) = {
 let update_player (s : t) : t = 
   {s with current_player = s.next_player; next_player = s.current_player;}
 
-let update_player_guesses (s : t) : t = 
+(** [change_index lst acc pos] is the new list with 
+    element at [pos] position incremented up by 1. 
+    Raises: [Failure pos too big] if [pos] is not a 
+    position in [lst].
+    Requires: [pos] is indexed from 0.*)
+let rec change_index elt lst acc pos = 
+  match pos, lst with
+  | 0, [] -> failwith "x pos too big"
+  | 0, h :: t -> List.rev_append acc ((elt) :: t)
+  | n, [] -> failwith "x pos too big"
+  | n, h :: t -> change_index elt t (h :: acc) (pos - 1)
+
+let rec change_matrix_index elt matrix acc x y =
+  match y, matrix with
+  | 0, [] -> failwith "y row value too big"
+  | 0, h :: t -> List.rev_append acc (change_index elt h [] x :: t)
+  | n, [] -> failwith "y row value too big"
+  | n, h :: t -> change_matrix_index elt t (h :: acc) x (y - 1)
+
+let insert_array x y arr value = 
+  arr.(y).(x) <- value;
+  arr
+
+let update_player_guesses (s : t) (x : int) (y :int) (new_elt : tile_status) : t = 
   match s.current_player with
   | Player1 _ -> 
-
+    {s with player_1 = change_matrix_index new_elt s.player_1 [] (x - 1) (y - 1)}
   | Player2 _ -> 
+    {s with player_2 = change_matrix_index new_elt s.player_2 [] (x - 1) (y - 1)}
+
+let get_player_guess (s : t) (x : int) (y : int) = 
+  match s.current_player with
+  | Player1 _ -> 
+    ((s.player_1 |> List.nth) y |> List.nth) x
+  | Player2 _ -> 
+    ((s.player_2 |> List.nth) y |> List.nth) x
+
+let get_ships_sunk (s : t) (player : string) (player_ship_locations) = 
+
+
 
 type victory = 
   | Winner of name
   | Continue
+
+let get_current_player (s : t) : string = 
+  match s.current_player with
+  | Player1 s -> s
+  | Player2 s -> s
+
+let get_next_player (s : t) : string = 
+  match s.next_player with
+  | Player1 s -> s
+  | Player2 s -> s
 
 (** [victory s] is [Winner player]
     where [player] is the name of the player who won 
@@ -94,11 +141,11 @@ type victory =
     REQUIRES: [victory s] must be applied after every turn cycle to give 
               the champion at the first instance, otherwise it will
               give the wrong champgion. *)
-let victory (s : t) : victory = 
+let update_victory (s : t) : victory = 
   match s.current_player with
   | Player1 name -> 
-    if List.length s.player_1_ships_found = c_NUM_SHIPS then Winner name 
-    else Continue
+    if List.length s.player_1_ships_found = c_NUM_SHIPS then true 
+    else false
   | Player2 name -> 
-    if List.length s.player_2_ships_found = c_NUM_SHIPS then Winner name 
-    else Continue
+    if List.length s.player_2_ships_found = c_NUM_SHIPS then true 
+    else false

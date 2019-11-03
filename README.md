@@ -13,8 +13,10 @@
 
 ### Main:
 - run actual game and read from terminal
+- when first start off game, it will call "place_ship "player 1"" and will only change to "player 2" when the player one inventory is empty and when player inputs "finish"
 
 ### Battleship:
 - everything constant
 - ship locations
    - when inserting, check if Out of Bounds
+

@@ -7,6 +7,7 @@ type command =
   | Remove of object_phrase
   | Inventory
   | Remaining of object_phrase
+  | Finished
   | Quit
 
 exception Empty
@@ -24,5 +25,6 @@ let parse str =
     else if h = "remove" && t <> [] then Remove t
     else if h = "inventory" && t == [] then Inventory 
     else if h = "remaining" && t <> [] then Remaining t
+    else if h = "finished" && t == [] then Finished
     else if h = "quit" && t == [] then Quit
     else raise Malformed
