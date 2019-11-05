@@ -27,6 +27,9 @@ let rec place_ship player =
               else print_endline "Can't finish unless all ships placed!";
               place_ship player
             end
+          else 
+            print_endline "Finished putting down ships";
+          continue_game state bs
         | Place lst -> 
           let (x, y) = get_coord lst in 
           let ship = get_ship_name lst in 
