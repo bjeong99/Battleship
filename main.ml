@@ -108,10 +108,14 @@ type pre_game_state =
   | Quit
   | Continue of Battleship.t
 
-let rec lay_down_ship pre_game player = 
-  ANSITerminal.(print_string [red]
+let rec lay_down_ship pre_game player =
+  let color = 
+    if player then ANSITerminal.red 
+    else ANSITerminal.blue in 
+
+  ANSITerminal.(print_string [color]
                   "\n\nPlease lay down your ships on the map. \n");
-  ANSITerminal.(print_string [red]
+  ANSITerminal.(print_string [color]
                   "\n\nSpecify the placement as a column, followed
                   by a space, then the row, followed by the space,
                   for where you want the head of the ship to be. Next
@@ -124,11 +128,11 @@ let rec lay_down_ship pre_game player =
   | s -> 
     match Command.parse s with
     | Command.Quit -> 
-      ANSITerminal.(print_string [red]
+      ANSITerminal.(print_string [green]
                       "\n\nQuitting game.\n");
       Quit
     | Command.InvalidCommand -> 
-      ANSITerminal.(print_string [red]
+      ANSITerminal.(print_string [green]
                       "\n\nYour declaration had an error. Try again.\n");
       lay_down_ship pre_game player
     | Command.Valid (x, y, direction, ship) -> 
@@ -137,15 +141,15 @@ let rec lay_down_ship pre_game player =
         Battleship.print_player_ship_board new_pre_game (Battleship.choose_player player);
         Continue new_pre_game
       | Battleship.Failure (p_game, Battleship.BoundsError) ->
-        ANSITerminal.(print_string [red]
+        ANSITerminal.(print_string [green]
                         "\n\nYour coordinates were not on the grid. Try again.\n");
         lay_down_ship p_game player
       | Battleship.Failure (p_game, Battleship.OccupiedTile) ->
-        ANSITerminal.(print_string [red]
+        ANSITerminal.(print_string [green]
                         "\n\nYour coordinates for the ship were occupied already. Try again.\n");
         lay_down_ship p_game player
       | Battleship.Failure (p_game, Battleship.OutOfShips) ->
-        ANSITerminal.(print_string [red]
+        ANSITerminal.(print_string [green]
                         "\n\nYou have placed all the ships of that type already. Try again.\n");
         lay_down_ship p_game player
 
@@ -166,7 +170,7 @@ let lay_down_both_ships pre_game =
   match result_1 with
   | Quit -> Quit
   | Continue new_pre_game ->
-    ANSITerminal.(print_string [red]
+    ANSITerminal.(print_string [blue]
                     "\n\nPlease place your ships Player Two. \n");
     let result_2 = lay_down_player_ships pre_game false in 
     match result_2 with
@@ -182,7 +186,7 @@ let rec main_game_loop=
 *)
 
 let main () = 
-  ANSITerminal.(print_string [red]
+  ANSITerminal.(print_string [green]
                   "\n\nWelcome to the 3110 Battleship Game.\n");
   match pre_game (Battleship.initialize_pregame ()) with
   | Quit -> print_endline "Closing game";
