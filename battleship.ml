@@ -205,30 +205,29 @@ type action =
   | Failure of t * error
 
 let print_int_pair (x, y) = 
-  print_string "(";
-  print_int x;
-  print_string " , ";
-  print_int y;
-  print_string ")"
+  "(" ^ (string_of_int x) ^ ", " ^ (string_of_int y) ^ ")"
 
-let print_pairs_list lst = 
-  List.map print_int_pair lst |> ignore
+let rec print_pairs_list lst string_acc= 
+  match lst with 
+  | [] -> string_acc
+  | h :: t -> (print_int_pair h) ^ string_acc
+
+let rec print_ship_pos_dict dict string_acc= 
+  match dict with
+  | [] -> string_acc
+  | (ship, pairs_list) :: t ->
+    string_acc ^ "( " ^ ship ^ (print_pairs_list pairs_list "") ^ " )"
 
 let add_to_ship_dictionary ship_name ship_positions player game = 
   match player with
   | Player1 ->
+    print_endline (print_ship_pos_dict game.player_1_ship_dict "");
     {game with player_1_ship_dict = (ship_name, ship_positions) :: game.player_1_ship_dict}
   | Player2 ->
+    print_endline (print_ship_pos_dict game.player_2_ship_dict "");
     {game with player_2_ship_dict = (ship_name, ship_positions) :: game.player_2_ship_dict}
 
-let rec print_ship_pos_dict dict = 
-  match dict with
-  | [] -> ()
-  | (ship, pairs_list) :: t ->
-    print_string "(";
-    print_string ship;
-    print_pairs_list pairs_list;
-    print_string ") : "
+
 
 
 let insert_ship (x, y) direction ship player game = 
@@ -244,6 +243,7 @@ let insert_ship (x, y) direction ship player game =
       generate_pos_list (x, y) length direction 
     in bulk_add_ships player game (ship_positions |> List.map (fun (x, y) -> (x, y, ship)) );
     Success (game |> remove_ship player ship |> add_to_ship_dictionary (ship_to_string ship) ship_positions player)
+
 
 let player_ships player game = 
   match player with
