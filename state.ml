@@ -1,5 +1,5 @@
-let n_rows = 10
-let n_cols = 10
+let c_ROWS = 10
+let c_COLS = 10
 let c_NUM_SHIPS = 5
 
 (* [state] is the data in the game that has the ability to change
@@ -35,16 +35,25 @@ type ships =
   | Submarine
   | PTBoat
 
+(* state needs to store information for each player:
+   Specifically, it would be nice if we could store:
+    Where player stored his ships : so we can mark it damaged or not*)
+
 type t = {
   current_player : player;
   next_player    : player;
-  player_1_ship_placement : Battleship.ship;
+  player_1_ship_placement : Battleship.tile array array;
   player_1 : plyr_target_data;
   player_1_ships_found : ships list;
-  player_2_ship_placement : Battleship.ship;
+  player_1_ships_remaining : ships list;
+  player_2_ship_placement : Battleship.tile array array;
   player_2 : plyr_target_data;
   player_2_ships_found : ships list;
+  player_2_ships_remaining : ships list;
 }
+
+let init_enemy_board = 
+  Array.make_matrix c_ROWS c_COLS Unknown
 
 (** [init_unknown_list n acc elt] is the list 
     with [elt] in it [n] times following [acc]. 
@@ -115,6 +124,7 @@ let get_player_guess (s : t) (x : int) (y : int) =
   | Player2 _ -> 
     ((s.player_2 |> List.nth) y |> List.nth) x
 
+
 let get_ships_sunk (s : t) (player : string) (player_ship_locations) = 
 
 
@@ -149,3 +159,4 @@ let update_victory (s : t) : victory =
   | Player2 name -> 
     if List.length s.player_2_ships_found = c_NUM_SHIPS then true 
     else false
+

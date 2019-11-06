@@ -1,0 +1,17 @@
+There are four main modules to be used in this project,
+Including:
+Battleship module, which will hold the starting information
+after the players set up the game, 
+
+State module: which contains information revelant to both 
+players as the game progresses, as in
+  Which player is to move
+  Where that players ships are located
+  Where that player has targeted
+  Which ships the player has currently alive
+  And which ships of the opponent that the player has sunk
+
+Main module: 
+  which starts the game
+  COntaining: game printing data
+  

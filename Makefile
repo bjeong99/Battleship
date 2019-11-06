@@ -15,6 +15,12 @@ build:
 test:
 	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST)
 
+bisect-test:
+	BISECT_COVERAGE=YES $(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST) -runner sequential
+
+bisect: clean bisect-test
+	bisect-ppx-report -I _build -html report bisect0001.out
+
 play:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
@@ -43,4 +49,4 @@ docs-private: build
 
 clean:
 	ocamlbuild -clean
-	rm -rf doc.public doc.private battleship.zip
+	rm -rf doc.public doc.private battleship.zip bisect*.out

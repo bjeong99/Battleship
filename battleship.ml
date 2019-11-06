@@ -1,5 +1,281 @@
-let n_rows = 10
-let n_cols = 10
+let c_ROWS = 10
+let c_COLS = 10
+
+type ship_health = 
+  | ShipDamaged
+  | ShipSafe
+
+type ship_type = 
+  | Battleship 
+  | AircraftCarrier 
+  | Destroyer 
+  | Cruiser 
+  | Submarine 
+
+type tile = 
+  | Empty
+  | Ship of ship_type * ship_health
+
+type player = 
+  | Player1
+  | Player2
+
+(** Rep Invariant is y is rows, x is columns, rows first, columns second. *)
+type t = {
+  player_1_ships_remaining : ship_type list;
+  player_1_ships : tile array array;
+  player_2_ships_remaining : ship_type list;
+  player_2_ships : tile array array;
+}
+
+let starter_ship_list = [
+  AircraftCarrier ;
+  Battleship ;
+  Battleship ;
+  Destroyer ;
+  Destroyer ;
+  Destroyer ;
+  Cruiser ;
+  Submarine ;
+]
+
+let initialize_pregame () = {
+  player_1_ships_remaining = starter_ship_list;
+  player_1_ships = Array.make_matrix c_ROWS c_COLS Empty;
+  player_2_ships_remaining = starter_ship_list;
+  player_2_ships = Array.make_matrix c_ROWS c_COLS Empty;
+}
+
+let choose_player player = 
+  if player then Player1 else Player2
+
+let rec remove_first_instance_ship lst ship = 
+  match lst with
+  | [] -> []
+  | h :: t -> 
+    if h = ship then t else h :: remove_first_instance_ship t ship
+
+let remaining_ships player game = 
+  (match player with
+   | Player1 ->
+     game.player_1_ships_remaining
+   | Player2 ->
+     game.player_2_ships_remaining)
+  |> List.length
+
+let ship_placement_complete player game = 
+  remaining_ships player game = 0
+
+let ship_to_string ship = 
+  match ship with
+  | Battleship  -> "Battleship"
+  | AircraftCarrier  -> "Aircraft Carrier"
+  | Destroyer -> "Destroyer"
+  | Cruiser  -> "Cruiser"
+  | Submarine  -> "Submarine"
+
+let string_to_ship ship = 
+  if ship = "battleship" then Battleship
+  else if ship = "aircraftcarrier" then AircraftCarrier
+  else if ship = "destroyer" then Destroyer
+  else if ship = "cruiser" then Cruiser
+  else if ship = "submarine" then Submarine
+  else failwith "not legal ship"
+
+let remaining_ships_to_place player game = 
+  (match player with
+   | Player1 ->
+     game.player_1_ships_remaining
+   | Player2 ->
+     game.player_2_ships_remaining)
+  |> List.map ship_to_string
+
+let remove_ship player ship game = 
+  match player with
+  | Player1 ->
+    {game with 
+     player_1_ships_remaining = 
+       remove_first_instance_ship game.player_1_ships_remaining ship}
+  | Player2 ->
+    {game with 
+     player_2_ships_remaining = 
+       remove_first_instance_ship game.player_2_ships_remaining ship}
+
+let rec bulk_add_ships player game pos_list = 
+  match pos_list with
+  | [] -> ()
+  | (x, y, ship) :: t -> begin
+      match player with
+      | Player1 ->  
+        game.player_1_ships.(y).(x) <- Ship (ship, ShipSafe);
+        bulk_add_ships player game t
+      | Player2 ->
+        game.player_2_ships.(y).(x) <- Ship (ship, ShipSafe);
+        bulk_add_ships player game t
+    end
+
+type direction = 
+  | Left
+  | Right
+  | Up
+  | Down
+
+let string_to_direction str = 
+  if str = "left" then Left
+  else if str = "right" then Right
+  else if str = "up" then Up
+  else if str = "down" then Down
+  else failwith "str not one of four cases"
+
+let ship_length ship = 
+  match ship with
+  | Battleship -> 4
+  | AircraftCarrier -> 5
+  | Destroyer  -> 3
+  | Cruiser  -> 3
+  | Submarine  -> 2
+
+let rec generate_num_lst start length operator acc = 
+  if length = 0 then List.rev acc
+  else generate_num_lst ((operator) start 1) (length - 1) operator (start :: acc)
+
+let generate_pos_list (x, y) length direction = 
+  match direction with
+  | Left -> 
+    [] |> generate_num_lst x length (-) |> List.map (fun x -> (x, y)) 
+  | Right -> 
+    [] |> generate_num_lst x length (+) |> List.map (fun x -> (x, y)) 
+  | Down -> 
+    [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y))
+  | Up ->  
+    [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)) 
+
+let check_bounds (x, y) length direction = 
+  match direction with
+  | Left -> 
+    x - length + 1 >= 0 && x < 10 && y >= 0 && y < 10 
+  | Right -> 
+    x >= 0 && x + length - 1 < 10 && y >= 0 && y < 10 
+  | Up ->  
+    x >= 0 && x < 10 && y - length + 1 >= 0 && y < 10  
+  | Down -> 
+    x >= 0 && x < 10 && y >= 0 && y + length - 1 < 10
+
+let check_cell_unoccupied (x, y) player game = 
+  match player with
+  | Player1 ->
+    game.player_1_ships.(y).(x) = Empty
+  | Player2 -> 
+    game.player_2_ships.(y).(x) = Empty
+
+let check_unoccupied (x, y) length direction player game = 
+  (match direction with
+   | Left -> 
+     [] |> generate_num_lst x length (-) |> List.map (fun x -> (x, y)) 
+   | Right -> 
+     [] |> generate_num_lst x length (+) |> List.map (fun x -> (x, y)) 
+   | Down -> 
+     [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y))
+   | Up ->  
+     [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)))
+  |> List.for_all (fun (x, y) -> check_cell_unoccupied (x, y) player game )
+
+let check_ship_placed ship player game = 
+  match player with
+  | Player1 ->
+    List.mem ship game.player_1_ships_remaining 
+  | Player2 ->
+    List.mem ship game.player_2_ships_remaining 
+
+type error = 
+  | BoundsError
+  | OccupiedTile
+  | OutOfShips 
+
+type action = 
+  | Success of t
+  | Failure of t * error
+
+let print_int_pair (x, y) = 
+  print_string "(";
+  print_int x;
+  print_string " , ";
+  print_int y;
+  print_string ")"
+
+let print_pairs_list lst = 
+  List.map print_int_pair lst
+
+let insert_ship (x, y) direction ship player game = 
+  let length = ship_length ship in 
+  if not (check_bounds (x, y) length direction)
+  then Failure (game, BoundsError)
+  else if not (check_unoccupied (x, y) length direction player game)
+  then Failure (game, OccupiedTile)
+  else if not (check_ship_placed ship player game) 
+  then Failure (game, OutOfShips)
+  else 
+    let ship_positions = 
+      generate_pos_list (x, y) length direction 
+      |> List.map (fun (x, y) -> (x, y, ship)) 
+    in (bulk_add_ships player game ship_positions); 
+    Success (remove_ship player ship game)
+
+let player_ships player game = 
+  match player with
+  | Player1 ->
+    game.player_1_ships
+  | Player2 -> 
+    game.player_2_ships
+
+let check_hit (x, y) player game = 
+  match player with
+  | Player1 -> begin
+      match game.player_1_ships.(y).(x) with
+      | Ship (_, ShipDamaged) -> true
+      | _ -> false
+    end
+  | Player2 -> begin
+      match game.player_2_ships.(y).(x) with
+      | Ship (_, ShipDamaged) -> true
+      | _ -> false
+    end
+
+let print_player_ship_board game player =
+  let matrix = 
+    match player with
+    | Player1 -> game.player_1_ships
+    | Player2 -> game.player_2_ships
+  in
+  for i = 0 to (c_ROWS - 1) do
+    let s = ref "" in 
+    for j = 0 to (c_COLS - 1) do 
+      let tile_rep = 
+        match matrix.(i).(j) with
+        | Empty -> "_"
+        | Ship (Battleship, ShipSafe) -> "B"
+        | Ship (Battleship, ShipDamaged) -> "b"
+        | Ship (AircraftCarrier, ShipSafe) -> "A"
+        | Ship (AircraftCarrier, ShipDamaged) -> "a"
+        | Ship (Destroyer, ShipSafe) -> "D"
+        | Ship (Destroyer, ShipDamaged) -> "d"
+        | Ship (Cruiser, ShipSafe) -> "C"
+        | Ship (Cruiser, ShipDamaged) -> "c"
+        | Ship (Submarine, ShipSafe) -> "S"
+        | Ship (Submarine, ShipDamaged)-> "s"
+      in s := !s ^ " " ^ tile_rep
+    done;
+    print_endline !s;
+  done
+
+
+
+
+
+(*
+
+
+
 
 let cHIT_CHAR = "X"
 let cMISS_CHAR = "O"
@@ -191,4 +467,4 @@ let place_ship ship matrix x0 x1 y0 y1 =
   | Cruiser -> 
   | PTBoat -> 
   | Submarine ->
-
+*)
