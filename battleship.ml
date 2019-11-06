@@ -20,12 +20,16 @@ type player =
   | Player1
   | Player2
 
+type ship_dictionary = (string * (int * int) list) list
+
 (** Rep Invariant is y is rows, x is columns, rows first, columns second. *)
 type t = {
   player_1_ships_remaining : ship_type list;
   player_1_ships : tile array array;
+  player_1_ship_dict : ship_dictionary;
   player_2_ships_remaining : ship_type list;
   player_2_ships : tile array array;
+  player_2_ship_dict : ship_dictionary;
 }
 
 let starter_ship_list = [
@@ -42,8 +46,10 @@ let starter_ship_list = [
 let initialize_pregame () = {
   player_1_ships_remaining = starter_ship_list;
   player_1_ships = Array.make_matrix c_ROWS c_COLS Empty;
+  player_1_ship_dict = [];
   player_2_ships_remaining = starter_ship_list;
   player_2_ships = Array.make_matrix c_ROWS c_COLS Empty;
+  player_2_ship_dict = [];
 }
 
 let choose_player player = 
@@ -204,7 +210,24 @@ let print_int_pair (x, y) =
   print_string ")"
 
 let print_pairs_list lst = 
-  List.map print_int_pair lst
+  List.map print_int_pair lst |> ignore
+
+let add_to_ship_dictionary ship_name ship_positions player game = 
+  match player with
+  | Player1 ->
+    {game with player_1_ship_dict = (ship_name, ship_positions) :: game.player_1_ship_dict}
+  | Player2 ->
+    {game with player_2_ship_dict = (ship_name, ship_positions) :: game.player_2_ship_dict}
+
+let rec print_ship_pos_dict dict = 
+  match dict with
+  | [] -> ()
+  | (ship, pairs_list) :: t ->
+    print_string "(";
+    print_string ship;
+    print_pairs_list pairs_list;
+    print_string ") : "
+
 
 let insert_ship (x, y) direction ship player game = 
   let length = ship_length ship in 
@@ -217,9 +240,8 @@ let insert_ship (x, y) direction ship player game =
   else 
     let ship_positions = 
       generate_pos_list (x, y) length direction 
-      |> List.map (fun (x, y) -> (x, y, ship)) 
-    in (bulk_add_ships player game ship_positions); 
-    Success (remove_ship player ship game)
+    in bulk_add_ships player game (ship_positions |> List.map (fun (x, y) -> (x, y, ship)) );
+    Success (game |> remove_ship player ship |> add_to_ship_dictionary (ship_to_string ship) ship_positions player)
 
 let player_ships player game = 
   match player with
