@@ -81,11 +81,12 @@ let ship_to_string ship =
   | Submarine  -> "Submarine"
 
 let string_to_ship ship = 
-  if ship = "battleship" then Battleship
-  else if ship = "aircraftcarrier" then AircraftCarrier
-  else if ship = "destroyer" then Destroyer
-  else if ship = "cruiser" then Cruiser
-  else if ship = "submarine" then Submarine
+  let shiplow = String.lowercase_ascii ship in 
+  if shiplow = "battleship" then Battleship
+  else if shiplow = "aircraftcarrier" then AircraftCarrier
+  else if shiplow = "destroyer" then Destroyer
+  else if shiplow = "cruiser" then Cruiser
+  else if shiplow = "submarine" then Submarine
   else failwith "not legal ship"
 
 let remaining_ships_to_place player game = 
@@ -127,10 +128,11 @@ type direction =
   | Down
 
 let string_to_direction str = 
-  if str = "left" then Left
-  else if str = "right" then Right
-  else if str = "up" then Up
-  else if str = "down" then Down
+  let strlow = String.lowercase_ascii str in 
+  if strlow = "left" then Left
+  else if strlow = "right" then Right
+  else if strlow = "up" then Up
+  else if strlow = "down" then Down
   else failwith "str not one of four cases"
 
 let ship_length ship = 
