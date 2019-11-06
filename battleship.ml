@@ -1,3 +1,4 @@
+
 let c_ROWS = 10
 let c_COLS = 10
 
@@ -35,9 +36,6 @@ type t = {
 let starter_ship_list = [
   AircraftCarrier ;
   Battleship ;
-  Battleship ;
-  Destroyer ;
-  Destroyer ;
   Destroyer ;
   Cruiser ;
   Submarine ;
