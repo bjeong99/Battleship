@@ -110,7 +110,6 @@ type action =
   | Failure of t * error
 
 let target_ship (x, y) player state = 
-  print_endline (string_of_int (List.length state.player_1_grid_guesses));
   if not (check_bounds (x, y)) then Failure (state, OutOfBounds) 
   else if not (check_coordinate (x, y) player state) then Failure (state, CoordinateVisited)
   else 
