@@ -82,6 +82,7 @@ let init_state player_1_pregame player_2_pregame = {
 
 
 
+
 let init_state bs1 bs2 = 
   let empty_grid = empty_board in 
   {
@@ -107,6 +108,16 @@ let check_enemy_board x y enemy_board =
 let update_guess_dict x y guess_dict miss= 
   if miss then 
     let new_dict = insert "M" (x, y) Up guess_dict
+
+let rec check_sunk lst_of_coord =
+  match lst_of_coord with
+  |[] -> Error
+  |(_,_,status) :: t -> if status = Damaged then check_sunk t else false
+
+let rec check_victory dict = 
+  match dict with
+  | [] -> true
+  | (ship, lst) :: t -> check_sunk lst && check_victory t
 (* (** [init_unknown_list n acc elt] is the list 
     with [elt] in it [n] times following [acc]. 
     Requires: [n] is greater than or equal to [0].*)
