@@ -5,6 +5,8 @@ type command =
   | Target of int * int
   (*| Ingame of int * int * string * string*)
 
+let c_TARGET = "target"
+
 let rec string_to_char acc s = 
   match s.[0] with
   | c -> string_to_char (c :: acc) (String.sub s 1 (String.length s - 1)) 
@@ -89,9 +91,10 @@ let process_string s =
 (** the command I want to parse is
     x, y, direction, ship*)
 
+
 let parse_elements str_lst = 
   match str_lst with
-  | x :: y :: direction :: ship :: t ->
+  | x :: y :: direction :: ship :: [] ->
     if process_number x && 
        process_number y && 
        process_string direction && 
@@ -99,6 +102,11 @@ let parse_elements str_lst =
        process_direction direction &&
        process_ship_name ship 
     then Valid (int_of_string x - 1, int_of_string y - 1, direction, ship)
+    else InvalidCommand
+  | c_TARGET :: x :: y :: [] ->
+    if process_number x && 
+       process_number y 
+    then Target (int_of_string x - 1, int_of_string y - 1)
     else InvalidCommand
   | _ -> InvalidCommand
 

@@ -97,7 +97,7 @@ let get_both_player_names () =
   let plyr2 = get_name () in 
   (plyr1, plyr2)
 
-let () = 
+let () =  
   match get_both_player_names () with
   | (s1, s2) -> print_endline s1; print_endline s2
 (*| _ -> failwith "illegal"*)
@@ -135,6 +135,10 @@ let rec lay_down_ship pre_game player =
       ANSITerminal.(print_string [green]
                       "\n\nYour declaration had an error. Try again.\n");
       lay_down_ship pre_game player
+    | Command.Target (_, _) ->
+      ANSITerminal.(print_string [green]
+                      "\n\nWe are the pregame phase. Try again.\n");
+      lay_down_ship pre_game player
     | Command.Valid (x, y, direction, ship) -> 
       match (Battleship.insert_ship (x, y) (Battleship.string_to_direction direction) (Battleship.string_to_ship ship) (Battleship.choose_player player) pre_game) with
       | Battleship.Success new_pre_game -> 
@@ -152,6 +156,8 @@ let rec lay_down_ship pre_game player =
         ANSITerminal.(print_string [green]
                         "\n\nYou have placed all the ships of that type already. Try again.\n");
         lay_down_ship p_game player
+      | Battleship.Failure (_, Battleship.NonexistShip) ->
+        failwith "remove not implemented yet"
 
 let rec lay_down_player_ships pre_game player = 
   if Battleship.remaining_ships (Battleship.choose_player player) pre_game = 0 then Continue pre_game
@@ -172,7 +178,7 @@ let lay_down_both_ships pre_game =
   | Continue new_pre_game ->
     ANSITerminal.(print_string [blue]
                     "\n\nPlease place your ships Player Two. \n");
-    let result_2 = lay_down_player_ships pre_game false in 
+    let result_2 = lay_down_player_ships new_pre_game false in 
     match result_2 with
     | Quit -> Quit
     | Continue final_pre_game -> Continue final_pre_game
@@ -180,17 +186,115 @@ let lay_down_both_ships pre_game =
 let pre_game pre_game = 
   lay_down_both_ships pre_game
 
-(*
-let rec main_game_loop=
-  failwith "Unimplemented"
-*)
+type game_state = 
+  | End
+  | Victory
+  | ContinueGame of State.t
+
+let rec target_ship state = 
+  let player = State.get_current_player state in
+  (if player then ANSITerminal.(print_string [green]
+                                  "\n\nPlayer One, it is your turn to move\n")
+   else ANSITerminal.(print_string [green]
+                        "\n\nPlayer Two, it is your turn to move\n"));
+  let color = 
+    if player then ANSITerminal.red 
+    else ANSITerminal.blue in 
+  ANSITerminal.(print_string [green]
+                  "\n\nThis is your opponent grid.\n");
+  State.print_guesses (State.bool_to_player player) state;
+  print_newline ();
+  ANSITerminal.(print_string [green]
+                  "\n\nThis is your grid.\n");      
+  State.print_player_dict (State.bool_to_player player) state;
+  print_newline ();
+  ANSITerminal.(print_string [color]
+                  "\n\nPlease target a location on the enemy map. \n");
+  ANSITerminal.(print_string [color]
+                  "\n\nSpecify the placement as a column by typing in
+                  target, a comma, the x coordinate, comma,
+                  and the y coordinate. \n");
+  match read_line () with
+  | s -> 
+    match Command.parse s with
+    | Command.Quit -> 
+      ANSITerminal.(print_string [green]
+                      "\n\nQuitting game.\n");
+      End
+    | Command.InvalidCommand -> 
+      ANSITerminal.(print_string [green]
+                      "\n\nYour declaration had an error. Try again.\n");
+      target_ship state
+    | Command.Valid (x, y, direction, ship) -> 
+      ANSITerminal.(print_string [green]
+                      "\n\nWe are no longer in the pregame phase. Try again.\n");
+      target_ship state
+    | Command.Target (x, y) ->
+      match State.target_ship (x, y) (State.bool_to_player player) state with
+      | State.Failure (new_state, State.CoordinateVisited) ->
+        ANSITerminal.(print_string [green]
+                        "\n\nYou cannot target a location you previously targeted.\n");
+        target_ship new_state
+      | State.Failure (new_state, State.OutOfBounds) ->
+        ANSITerminal.(print_string [green]
+                        "\n\nYour coordinate to target was out of bounds.\n");
+        target_ship new_state
+      | State.Success (new_state, ship_hit, ship_sunk) ->
+        ANSITerminal.(print_string [green]
+                        "\n\nThis is your opponent grid.\n");
+        State.print_guesses (State.bool_to_player player) new_state;
+        print_newline ();
+        ANSITerminal.(print_string [green]
+                        "\n\nThis is your grid.\n");      
+        State.print_player_dict (State.bool_to_player player) new_state;
+        print_newline ();
+        (if ship_hit 
+         then ANSITerminal.(print_string [green]
+                              "\n\nYou hit a ship.\n")
+         else ANSITerminal.(print_string [green]
+                              "\n\nYou did not hit a ship.\n")) |> ignore;
+        (if ship_sunk 
+         then ANSITerminal.(print_string [green]
+                              "\n\nYou sunk a ship.\n")
+         else ANSITerminal.(print_string [green]
+                              "\n\nYou did not sink a ship.\n")) |> ignore;
+
+        if State.check_victory (State.bool_to_player player) new_state 
+        then 
+          (
+            (if player then ANSITerminal.(print_string [green]
+                                            "\n\nPlayer One, you win!.\n")
+             else ANSITerminal.(print_string [green]
+                                  "\n\nPlayer Two, you win!.\n")) |> ignore;
+            Victory)              
+        else ContinueGame (new_state |> State.update_player)
+
+
+let rec main_game_loop state =
+  match target_ship state with
+  | End ->  
+    ANSITerminal.(print_string [green]
+                    "\n\nQuitting game.\n");
+  | Victory -> 
+    ANSITerminal.(print_string [green]
+                    "\n\nGood game. Game over.\n");
+  | ContinueGame new_state -> 
+    main_game_loop new_state
+
+let run_game () = 
+  match pre_game (Battleship.empty) with
+  | Quit -> print_endline "Closing game";
+  | Continue final_pre_game -> 
+    main_game_loop 
+      (State.init_state 
+         true false 
+         (Battleship.get_player_dict (Battleship.choose_player true) final_pre_game) 
+         (Battleship.get_player_dict (Battleship.choose_player false) final_pre_game)) 
 
 let main () = 
   ANSITerminal.(print_string [green]
                   "\n\nWelcome to the 3110 Battleship Game.\n");
-  match pre_game (Battleship.initialize_pregame ()) with
-  | Quit -> print_endline "Closing game";
-  | Continue final_pre_game -> final_pre_game |> ignore
+  run_game ()
 
 let () = main ()
 

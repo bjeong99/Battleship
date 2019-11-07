@@ -1,21 +1,31 @@
+type grid_guess
+type player
 type t
 
-type tile_status = 
-  | Unknown
-  | Hit
-  | Miss
+type error = 
+  | CoordinateVisited
+  | OutOfBounds
 
-type ship
+type action = 
+  | Success of t * bool * bool
+  | Failure of t * error
 
-val init_state : string -> string -> t
+type ship_type
+
+val bool_to_player : bool -> player
+val init_state : bool -> bool -> Battleship.list_t -> Battleship.list_t -> t
 val update_player : t -> t
+val get_current_player : t -> bool
+val get_next_player : t -> bool
 
-val place_ship : bool -> t -> t
-val ships_found : bool -> t -> ship list
+val target_ship : int * int -> player -> t -> action
 
+(*val ships_found : t -> string list*)
 
-val update_player_guesses : t -> int -> int -> t
-val get_player_guess : t -> int -> int -> tile_status
-val get_current_player : t -> string
-val get_next_player : t -> string
-val update_victory : t -> bool
+val get_player_guess : int * int -> player -> t -> bool
+
+val check_victory : player -> t -> bool
+
+val print_guesses : player -> t -> unit
+val print_player_dict : player -> t -> unit
+

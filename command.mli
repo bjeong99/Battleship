@@ -2,7 +2,7 @@ type command =
   | Quit
   | InvalidCommand
   | Valid of int * int * string * string
-  | Target of int * int
+  | Target of int * int 
 
 val parse : string -> command
 
