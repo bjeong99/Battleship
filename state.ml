@@ -3,7 +3,7 @@ let c_COLS = 10
 let c_NUM_SHIPS = 5
 
 exception AlreadyGuessed of string
-open Battleship2
+
 (* [state] is the data in the game that has the ability to change
     in the game and must be updated.
 
@@ -37,14 +37,50 @@ type ships =
 
 (* state needs to store information for each player:
    Specifically, it would be nice if we could store:
-    Where player stored his ships : so we can mark it damaged or not*)
+    Where player stored his ships : so we can mark it damaged or not
+
+
+
+   We need to know where player1 targeted, so that we can display his targets with
+       either unknown (untargeted), hit (hit a ship of player2) or miss (miss a ship of player2)
+
+   - data structures 
+        We need to update dictionary of player 2, marking hits if player1 hits player 2
+        We need an array of where player1 has targeted , marking with either unknown, hit or miss - to print to board
+
+    Need to know the damage status of player1, so that we can display the status
+      with either : No ship at location, hit (player 2 hit player1) or NotHit (player1's ship at coordinate safe)
+
+   - data structures 
+      We need to take the dictionary of player1, and have it display which coordinate of player1 ships were hit or safe
+
+*)
+
+type player = 
+  | Player1
+  | Player2
+
+type grid_guess = 
+  | Unknown
+  | Miss
+  | Hit
 
 type t = {
-  grid_ship: string array array;
-  grid_guess: string array array;
-  ship_list: Battleship2.t;
-  hit_list: Battleship2.t
+  player_1_grid_guesses : string array array;
+  player_1_ship_dict : Battleship.t;
+  player_2_grid_guesses : string array array;
+  player_2_ship_dict : Battleship.t;
 }
+
+let init_state player_1_pregame player_2_pregame = {
+  player_1_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
+  player_1_ship_dict = player_1_pregame;
+  player_2_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
+  player_2_ship_dict = player_2_pregame;
+}
+
+
+
 
 let init_state bs1 bs2 = 
   let empty_grid = empty_board in 
