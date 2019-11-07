@@ -4,9 +4,8 @@ type direction =
   | Up
   | Down
 type status = 
-  | Unknown 
-  | Hit
-  | Miss
+  | Damaged
+  | Undamaged
 
 type ship_type = 
   | Battleship 
@@ -51,13 +50,13 @@ let rec generate_num_lst start length operator acc =
 let generate_pos_list (x, y) length direction = 
   match direction with
   | Left -> 
-    [] |> generate_num_lst x length (-) |> List.map (fun x -> (x, y)) 
+    [] |> generate_num_lst x length (-) |> List.map (fun x -> (x, y, Undamaged)) 
   | Right -> 
-    [] |> generate_num_lst x length (+) |> List.map (fun x -> (x, y)) 
+    [] |> generate_num_lst x length (+) |> List.map (fun x -> (x, y, Undamaged)) 
   | Down -> 
-    [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y))
+    [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y, Undamaged))
   | Up ->  
-    [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)) 
+    [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y, Undamaged)) 
 
 let string_to_ship ship = 
   let shiplow = String.lowercase_ascii ship in 
@@ -70,24 +69,12 @@ let string_to_ship ship =
 
 
 let insert ship (x, y) direction dict = 
-  let ship_positions = generate_pos_list (x, y) (ship_length (string_to_ship ship)) direction in   
+  let ship_positions = generate_pos_list (x, y) 
+      (ship_length (string_to_ship ship)) direction in   
   (ship, ship_positions) :: dict
 
 let remove ship dict = 
   List.filter (fun (ship_elt, _ ) -> ship <> ship_elt) dict
-
-type player = Player1 | Player2
-
-let generate_pos_list (x, y) length direction = 
-  match direction with
-  | Left -> 
-    [] |> generate_num_lst x length (-) |> List.map (fun x -> (x, y)) 
-  | Right -> 
-    [] |> generate_num_lst x length (+) |> List.map (fun x -> (x, y)) 
-  | Down -> 
-    [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y))
-  | Up ->  
-    [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)) 
 
 let check_bounds (x, y) length direction = 
   match direction with
@@ -100,8 +87,9 @@ let check_bounds (x, y) length direction =
   | Down -> 
     x >= 0 && x < 10 && y >= 0 && y + length - 1 < 10
 
-let check_cell_unoccupied (x, y) dict = 
-  List.fold_left (fun init (key, values_list) -> values_list :: init) [] dict |> List.mem (x, y)
+let check_cell_occupied (x, y) dict = 
+  List.fold_left (fun init (key, values_list) -> values_list @ init) [] dict |> 
+  List.map (fun (x,y,z) -> (x,y)) |> List.mem (x, y)
 
 let check_unoccupied (x, y) length direction dict = 
   (match direction with
@@ -113,7 +101,7 @@ let check_unoccupied (x, y) length direction dict =
      [] |> generate_num_lst y length (+) |> List.map (fun y -> (x, y))
    | Up ->  
      [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)))
-  |> List.for_all (fun (x, y) -> check_cell_unoccupied (x, y) dict)
+  |> List.for_all (fun (x, y) -> check_cell_occupied (x, y) dict)
 
 
 let empty_board = 
@@ -124,7 +112,9 @@ let rec make_grid dict grid =
   | [] -> grid
   | (string, list_of_ints) :: t ->
     let first_letter = Str.first_chars (String.uppercase_ascii string) 1 in
-    List.map (fun (x, y) -> grid.(y).(x) <- first_letter) list_of_ints |> ignore;
+    List.map (fun (x, y, z) -> grid.(y).(x) <- 
+                 (if z = Undamaged then first_letter else String.lowercase_ascii
+                      first_letter)) list_of_ints |> ignore;
     make_grid t grid
 
 
