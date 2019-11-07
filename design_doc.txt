@@ -3,6 +3,12 @@ Including:
 Battleship module, which will hold the starting information
 after the players set up the game, 
 
+Data structures in battleship and their interpretation:
+A dictionary of 
+  key : ships
+  value : list of coordinate and the status of the coordinate
+ 
+
 State module: which contains information revelant to both 
 players as the game progresses, as in
   Which player is to move
@@ -11,7 +17,13 @@ players as the game progresses, as in
   Which ships the player has currently alive
   And which ships of the opponent that the player has sunk
 
-Main module: 
-  which starts the game
-  COntaining: game printing data
+  What we need currently in state:
+  For the player1:
+    We need to know where player1 targeted, so that we can display his targets with
+       either unknown (untargeted), hit (hit a ship of player2) or miss (miss a ship of player2)
+
+      - data structures 
+        We need to update dictionary of player 2, marking hits if player1 hits player 2
+        We need an array of where player1 has targeted , marking with either unknown, hit or miss - to print to board
+
   
