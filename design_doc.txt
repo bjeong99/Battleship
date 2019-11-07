@@ -24,7 +24,7 @@ players as the game progresses, as in
 
       - data structures 
         We need to update dictionary of player 2, marking hits if player1 hits player 2
-        We need an array of where player1 has targeted , marking with either unknown, hit or miss - to print to board
+        We need an dictionary to store where player 1 has targeted, e,.g the coordinate, and whether that coordinate was a hit or miss
 
     Need to know the damage status of player1, so that we can display the status
       with either : No ship at location, hit (player 2 hit player1) or NotHit (player1's ship at coordinate safe)

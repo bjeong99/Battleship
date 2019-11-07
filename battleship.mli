@@ -29,3 +29,4 @@ val check_cell_occupied: int * int -> t -> bool
 val check_unoccupied: int * int -> int -> direction -> t -> bool
 val empty_board: string array array
 val make_grid: t -> string array array -> string array array
+val change_to_damage : int * int -> t -> t

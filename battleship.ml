@@ -117,6 +117,22 @@ let rec make_grid dict grid =
                       first_letter)) list_of_ints |> ignore;
     make_grid t grid
 
+let rec change_damage_list (x, y) list acc =
+  match list with
+  | [] -> acc
+  | (a, b, status) :: t -> 
+    if a = x && b = y then change_damage_list (x, y) t ((a, b, Damaged) :: acc)
+    else change_damage_list (x, y) t ((a, b, status) :: acc)
+
+
+let change_to_damage (x, y) dict = 
+  let rec change_to_damage_helper (x, y) dict acc = 
+    match dict with
+    | [] -> acc
+    | (ship, lst) :: t ->
+      change_to_damage_helper (x, y) t ((ship, change_damage_list (x, y) lst []) :: acc)
+  in change_to_damage_helper (x, y) dict []
+
 
 
 

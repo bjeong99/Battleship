@@ -53,33 +53,50 @@ type player =
   | Player2
 
 type grid_guess = 
-  | Unknown
   | Miss
   | Hit
 
 type t = {
   current_player : player;
   next_player : player;
-  player_1_grid_guesses : grid_guess array array;
+  player_1_grid_guesses : (int * int * grid_guess) list;
   player_1_ship_dict : Battleship.t;
-  player_2_grid_guesses : grid_guess array array;
+  player_2_grid_guesses : (int * int * grid_guess) list;
   player_2_ship_dict : Battleship.t;
 }
 
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   current_player = player_1;
   next_player = player_2;
-  player_1_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
+  player_1_grid_guesses = [];
   player_1_ship_dict = player_1_pregame;
-  player_2_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
+  player_2_grid_guesses = [];
   player_2_ship_dict = player_2_pregame;
 }
 
-let target (x, y) player 
+let visited_cell = [Hit; Miss]
 
+let check_valid_coordinate (x, y) player game = 
+  match player with
+  | Player1 -> 
+    game.player_1_grid_guesses |> List.map (fun (x, y, guess) -> (x, y)) |> List.mem (x, y)
+  | Player2 -> 
+    game.player_2_grid_guesses |> List.map (fun (x, y, guess) -> (x, y)) |> List.mem (x, y)
 
-
-
+let target (x, y) player state = 
+  match player with
+  | Player1 ->
+    if Battleship.check_cell_occupied (x, y) state.player_2_ship_dict 
+    then {state with 
+          player_2_ship_dict = Battleship.change_to_damage (x, y) state.player_2_ship_dict;
+          player_1_grid_guesses = (x, y, Hit) :: state.player_1_grid_guesses}
+    else {state with player_1_grid_guesses = (x, y, Miss) :: state.player_1_grid_guesses}
+  | Player2 ->
+    if Battleship.check_cell_occupied (x, y) state.player_1_ship_dict
+    then {state with 
+          player_1_ship_dict = Battleship.change_to_damage (x, y) state.player_1_ship_dict;
+          player_2_grid_guesses = (x, y, Hit) :: state.player_2_grid_guesses}
+    else {state with player_2_grid_guesses = (x, y, Miss) :: state.player_2_grid_guesses}
 
 let init_state bs1 bs2 = 
   let empty_grid = empty_board in 
