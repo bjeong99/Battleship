@@ -1,7 +1,7 @@
 let c_ROWS = 10
 let c_COLS = 10
 let c_NUM_SHIPS = 5
-
+open Battleship
 exception AlreadyGuessed of string
 
 (* [state] is the data in the game that has the ability to change
@@ -16,14 +16,6 @@ exception AlreadyGuessed of string
       and player two's locations that he has targeted on
       player one *)
 
-type player =
-  | Player1
-  | Player2
-
-type tile_status = 
-  | Unknown
-  | Hit
-  | Miss
 
 type plyr_target_data =
   tile_status list list
@@ -66,18 +58,24 @@ type grid_guess =
   | Hit
 
 type t = {
-  player_1_grid_guesses : string array array;
+  current_player : player;
+  next_player : player;
+  player_1_grid_guesses : grid_guess array array;
   player_1_ship_dict : Battleship.t;
-  player_2_grid_guesses : string array array;
+  player_2_grid_guesses : grid_guess array array;
   player_2_ship_dict : Battleship.t;
 }
 
-let init_state player_1_pregame player_2_pregame = {
+let init_state player_1 player_2 player_1_pregame player_2_pregame = {
+  current_player = player_1;
+  next_player = player_2;
   player_1_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
   player_1_ship_dict = player_1_pregame;
   player_2_grid_guesses = Array.make_matrix c_ROWS c_COLS Unknown;
   player_2_ship_dict = player_2_pregame;
 }
+
+let target (x, y) player 
 
 
 
@@ -111,7 +109,7 @@ let update_guess_dict x y guess_dict miss=
 
 let rec check_sunk lst_of_coord =
   match lst_of_coord with
-  |[] -> Error
+  |[] -> true
   |(_,_,status) :: t -> if status = Damaged then check_sunk t else false
 
 let rec check_victory dict = 
