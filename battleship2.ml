@@ -3,10 +3,30 @@ type direction =
   | Right
   | Up
   | Down
+type status = 
+  | Unknown 
+  | Hit
+  | Miss
+type t = (string * ((int * int * status) list) ) list
 
-type t = (string * ((int * int) list) ) list
-
+exception NonexistShip
 let empty = []
+
+let rec get_ship_list dict acc_key= 
+  match dict with 
+  | [] -> acc_key
+  | (ship, (_,_)) :: t -> get_ship_list t (ship :: acc_key)
+
+let rec get_coord x y lst = 
+  match lst with 
+  | [] -> false
+  | (a, b) :: t -> if a = x && b = y then true
+    else get_coord x y t
+
+let rec get_ship_from_coord x y dict = 
+  match dict with 
+  | [] -> raise NonexistShip 
+  | (k, lst) :: t -> if (get_coord x y lst) then k else get_ship_from_coord x y t
 
 let rec generate_num_lst start length operator acc = 
   if length = 0 then List.rev acc
@@ -23,6 +43,9 @@ let generate_pos_list (x, y) length direction =
   | Up ->  
     [] |> generate_num_lst y length (-) |> List.map (fun y -> (x, y)) 
 
+type status = 
+  | Hit
+  | Miss
 
 type ship_type = 
   | Battleship 
