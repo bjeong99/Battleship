@@ -29,3 +29,8 @@ val check_victory : player -> t -> bool
 val print_guesses : player -> t -> unit
 val print_player_dict : player -> t -> unit
 
+val initialize_ai : bool -> bool -> Battleship.list_t -> Battleship.list_t -> t
+val target_ai : t -> ((int * int) * t)
+
+val target_medium_ai : t -> ((int * int) * t)
+

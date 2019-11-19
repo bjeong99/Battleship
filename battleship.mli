@@ -62,3 +62,5 @@ val print_player_ship_board: t -> player -> unit
 val print_dict : list_t -> unit
 val print_matrix : string array array -> unit
 val get_player_dict : player -> t -> list_t
+
+val randomly_laydown_ships : t -> ((int * int) * string * string)

@@ -296,6 +296,42 @@ let get_player_dict player game =
   | Player1 -> game.player_1_ships
   | Player2 -> game.player_2_ships
 
+let direction_list = ["up"; "down"; "left"; "right"]
+
+let choose_target pairs_list = 
+  let () = Random.self_init () in 
+  pairs_list 
+  |> List.length 
+  |> Random.int 
+  (*|> (fun l -> l - 1) *)
+  |> List.nth pairs_list
+
+let create_pairs m n = 
+  let rec create_rows m n acc =
+    if m > 0 then 
+      let init = List.init n (fun elt -> m) in
+      let columns = List.init n (fun elt -> elt + 1) in 
+      create_rows (m - 1) n (acc @ List.combine init columns)
+    else 
+      acc
+  in create_rows m n []
+
+let ship_type_to_ship_name ship = 
+  match ship with
+  | AircraftCarrier -> "aircraftcarrier"
+  | Battleship -> "battleship"
+  | Destroyer  -> "destroyer"
+  | Cruiser  -> "cruiser"
+  | Submarine  -> "submarine"
+
+let randomly_laydown_ships game = 
+  let () = Random.self_init () in 
+  let remaining_ships_num = List.length game.player_2_ships_remaining in 
+  let random_ship = List.nth (game.player_2_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
+  let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
+  let pairs_list = create_pairs c_ROWS c_COLS in 
+  let random_position = choose_target pairs_list in 
+  (random_position, random_direction, random_ship)
 
 
 

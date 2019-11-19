@@ -3,6 +3,7 @@ type command =
   | InvalidCommand
   | Valid of int * int * string * string
   | Target of int * int
+  | YesNo of bool
   (*| Ingame of int * int * string * string*)
 
 let c_TARGET = "target"
@@ -103,14 +104,19 @@ let parse_elements str_lst =
        process_ship_name ship 
     then Valid (int_of_string x - 1, int_of_string y - 1, direction, ship)
     else InvalidCommand
-  | c_TARGET :: x :: y :: [] ->
+  | target :: x :: y :: [] ->
     if process_number x && 
-       process_number y 
+       process_number y &&
+       target = c_TARGET
     then Target (int_of_string x - 1, int_of_string y - 1)
     else InvalidCommand
   | _ -> InvalidCommand
 
 let c_QUIT = "quit"
+let c_YES = "yes"
+let c_NO = "no"
+let c_EASY = "easy"
+let c_MEDIUM = "medium"
 
 let parse_quit str = 
   if str = c_QUIT then Quit 
@@ -118,13 +124,45 @@ let parse_quit str =
     str 
     |> String.split_on_char ','
     |> List.map String.trim
+    |> List.filter (fun elt -> elt <> "")
     |> parse_elements
+
+let parse_affirmative str = 
+  if str = c_YES then YesNo true
+  else if str = c_NO then YesNo false
+  else parse_quit str
 
 let parse str = 
   str 
   |> String.lowercase_ascii
   |> String.trim
-  |> parse_quit
+  |> parse_affirmative
+
+
+
+type difficulty = 
+  | Easy
+  | Medium
+  | InvalidDifficulty
+
+let check_difficulty str = 
+  if str  = c_EASY then Easy
+  else if str = c_MEDIUM then Medium
+  else InvalidDifficulty
+
+let parse_difficulty str = 
+  str 
+  |> String.lowercase_ascii
+  |> String.trim
+  |> check_difficulty
+
+(*
+1, 1, down, aircraftcarrier
+2,2 ,down, battleship
+3,3, down, cruiser
+4, 4, down, destroyer
+5, 5, down, submarine
+ *)
 
 (*
 let parse game_state player str = 

@@ -28,6 +28,9 @@ type t = {
   player_2_grid_guesses : (int * int * grid_guess) list;
   player_2_ship_dict : Battleship.list_t;
   (* ships_player_2_sunk : string list;*)
+  pos_targeted : (int * int) list;
+  pos_remaining : (int * int) list;
+  surrounding_positions : (int * int) list;
 }
 
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
@@ -37,6 +40,9 @@ let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   player_1_ship_dict = player_1_pregame;
   player_2_grid_guesses = [];
   player_2_ship_dict = player_2_pregame;
+  pos_targeted = [];
+  pos_remaining = [];
+  surrounding_positions = [];
 }
 
 let update_player state = 
@@ -151,6 +157,105 @@ let check_victory player game =
     Battleship.check_all_ships_damaged game.player_2_ship_dict
   | Player2 -> 
     Battleship.check_all_ships_damaged game.player_1_ship_dict
+
+(* AI SHIT *)
+
+let create_pairs m n = 
+  let rec create_rows m n acc =
+    if m > 0 then 
+      let init = List.init n (fun elt -> m) in
+      let columns = List.init n (fun elt -> elt + 1) in 
+      create_rows (m - 1) n (acc @ List.combine init columns)
+    else 
+      acc
+  in create_rows m n []
+
+let choose_target pairs_list = 
+  let () = Random.self_init () in   
+  pairs_list 
+  |> List.length 
+  |> Random.int 
+  (*|> (fun l -> l - 1) *)
+  |> List.nth pairs_list
+
+let rec get_hit_or_miss (x, y) grid_guesses = 
+  match grid_guesses with
+  | (x', y', guess) :: t -> 
+    if x = x' && y = y' then guess
+    else get_hit_or_miss (x, y) t
+  | [] -> Miss
+
+let get_occupied_or_not (x, y) enemy_ship_pos_list = 
+  enemy_ship_pos_list |> List.fold_left (fun acc (str, int_lst) -> int_lst :: acc) [] |> List.flatten |> List.map (fun (x, y, _) -> (x, y)) |> List.mem (x, y)
+
+let get_surrounding_positions (x, y) state = 
+  if get_occupied_or_not (x - 1, y - 1) state.player_1_ship_dict then
+    [(x, (y - 1));
+     (x, (y + 1));
+     ((x - 1), y);
+     ((x + 1), y);] 
+    |> List.filter (fun (x, y) -> check_bounds (x - 1, y - 1)) 
+  else []
+
+let rec print_pairs lst = 
+  match lst with
+  | (x, y) :: t -> ("(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")") |> print_endline; print_pairs t
+  | [] -> ()
+
+let update_targeted_locations ai_data target = 
+  let previously_targeted_locs = ai_data.pos_targeted in 
+  let new_surround_pos = 
+    ai_data.surrounding_positions 
+    |> (@) (get_surrounding_positions target ai_data)
+    |> List.sort_uniq 
+      (fun (x1, y1) (x2, y2) -> 
+         if x1 = x2 && y1 = y2 then 0 
+         else if x1 > x2 then 1 
+         else -1)
+    |> List.filter (fun elt -> elt <> target) 
+    |> List.filter (fun elt -> not (List.mem elt previously_targeted_locs)) in 
+  print_endline "These are the pairs of close locations";
+  print_pairs new_surround_pos;
+  print_endline "These are the position_targeted";
+  print_pairs previously_targeted_locs;
+  {
+    ai_data with
+    pos_targeted = target :: (ai_data.pos_targeted);
+    pos_remaining = 
+      List.filter (fun elt -> elt <> target) (ai_data.pos_remaining);
+    surrounding_positions = new_surround_pos;
+  }
+
+let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
+  current_player = player_1;
+  next_player = player_2;
+  player_1_grid_guesses = [];
+  player_1_ship_dict = player_1_pregame;
+  player_2_grid_guesses = [];
+  player_2_ship_dict = player_2_pregame;
+  pos_targeted = [];
+  pos_remaining = create_pairs c_ROWS c_COLS;
+  surrounding_positions = [];
+}
+
+let target_ai ai_data = 
+  let chosen_target = choose_target ai_data.pos_remaining in 
+  let ai_data' = update_targeted_locations ai_data chosen_target in 
+  (chosen_target, ai_data')
+
+let medium_choose_target pairs_list surrounding_pairs = 
+  if surrounding_pairs = [] then choose_target pairs_list
+  else choose_target surrounding_pairs
+
+let target_medium_ai ai_data = 
+  let chosen_target = medium_choose_target ai_data.pos_remaining ai_data.surrounding_positions in 
+  let ai_data' = update_targeted_locations ai_data chosen_target in 
+  (chosen_target, ai_data')
+
+
+
+
+
 
      (*
      let init_state bs1 bs2 = 

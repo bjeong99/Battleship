@@ -2,9 +2,17 @@ type command =
   | Quit
   | InvalidCommand
   | Valid of int * int * string * string
-  | Target of int * int 
+  | Target of int * int
+  | YesNo of bool
+
+type difficulty = 
+  | Easy
+  | Medium
+  | InvalidDifficulty
 
 val parse : string -> command
+
+val parse_difficulty : string -> difficulty
 
 (*
 type ship_type = 
