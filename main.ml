@@ -2,9 +2,8 @@
 open Graphics
 (*############https://stackoverflow.com/questions/34509522/detect-window-closing-ocaml-graphics*)
 
-(*
 
-Graphics stuff
+
 
 let create_pairs m n = 
   let rec create_rows m n acc =
@@ -32,7 +31,7 @@ let () =
   try
 
     Graphics.open_graph " 600x600";
-    set_color cyan;
+    set_color blue;
     draw_board 10 10 50 50;
     loop ()
 
@@ -40,7 +39,7 @@ let () =
   | Graphic_failure("fatal I/O error") ->
     print_string "Caught exception";
     print_newline ()
-*)
+
 
 (*############https://stackoverflow.com/questions/34509522/detect-window-closing-ocaml-graphics*)
 
@@ -610,6 +609,8 @@ let () =
 (* ########### Running Game ############# *)
 
 
+(*
+
 let ai_message = 
   ANSITerminal.(print_string [green]
                   "\n\nPlease choose whether you would like to play against an AI or not.\n");
@@ -1142,4 +1143,6 @@ let main () =
   place_ship "player_1"
 
 let () = main ()
+*)
+
 *)

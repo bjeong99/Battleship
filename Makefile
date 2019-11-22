@@ -32,7 +32,7 @@ finalcheck: check
 	bash finalcheck.sh
 
 zip:
-	zip battleship.zip *.ml* *.json _tags Makefile
+	zip battleship.zip *.ml* *.json _tags *.txt Makefile
 	
 docs: docs-public docs-private
 	

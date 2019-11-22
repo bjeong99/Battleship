@@ -1,0 +1,23 @@
+Requires Graphics library to be installed on your machine!!!
+
+Run Make Build
+Run Make Play and start the game
+  For comments on how to play the game and other general comments, read
+  the MS 1 progress report.
+  The game also gives instructions
+
+To play game
+Make Play
+Enter yes or no if you want an AI
+To choose AI difficulty, enter medium or easy
+Note that commas are needed
+To place ship, 
+  do x_coordinate, y_coordinate, direction, and ship type
+  where ship type is aircraftcarrier, battleship, destroyer, cruiser or submarine
+  and direction is left, right, up or down
+
+Note that commas are needed
+to target do,
+  target, x_coordinate, y_coordinate
+
+At any time, to quit, enter quit
