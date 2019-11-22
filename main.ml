@@ -1,4 +1,5 @@
 
+(*
 open Graphics
 (*############https://stackoverflow.com/questions/34509522/detect-window-closing-ocaml-graphics*)
 
@@ -42,6 +43,8 @@ let () =
 
 
 (*############https://stackoverflow.com/questions/34509522/detect-window-closing-ocaml-graphics*)
+
+*)
 
 (*
 
