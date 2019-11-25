@@ -207,13 +207,13 @@ let initialize_main () =
 (* Determine if player wants AI or not *)
 let print_ai_message () = 
   ANSITerminal.(print_string [green]
-                  {|\n\nPlease choose whether 
-                  you would like to play against an AI or not.\n|});
+                  ("\nPlease choose whether "^ 
+                   "you would like to play against an AI or not.\n"));
   ANSITerminal.(print_string [green]
-                  {|\n\nIf you choose to play against AI, 
-                  you are player 1 and the AI is player 2.\n|});
+                  ("\nIf you choose to play against AI," ^ 
+                   "you are player 1 and the AI is player 2.\n"));
   ANSITerminal.(print_string [green]
-                  "\n\nPlease Enter yes, no, or quit.\n")
+                  "\nPlease Enter yes, no, or quit.\n")
 
 let print_ai_failure_message () = 
   ANSITerminal.(print_string [green]
