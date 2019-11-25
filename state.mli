@@ -26,6 +26,10 @@ val get_player_guess : int * int -> player -> t -> bool
 
 val check_victory : player -> t -> bool
 
+val string_of_guesses : player -> t -> string list
+val string_of_player_dict : player -> t -> string list
+val combine_boards : string list -> string list -> string list
+val print_boards : string list -> unit
 val print_guesses : player -> t -> unit
 val print_player_dict : player -> t -> unit
 

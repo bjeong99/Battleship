@@ -58,6 +58,8 @@ val choose_player: bool -> player
 val string_to_direction: string -> direction
 val remaining_ships: player -> t -> int
 val remaining_ships_to_place: player -> t -> string list
+val string_of_matrix : string array array -> string list
+val string_of_dict : list_t -> string list
 val print_player_ship_board: t -> player -> unit
 val print_dict : list_t -> unit
 val print_matrix : string array array -> unit

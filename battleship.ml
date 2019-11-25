@@ -1,6 +1,8 @@
 let c_ROWS = 10
 let c_COLS = 10
 
+let c_BOARD_SEP = "    "
+
 type direction = 
   | Left
   | Right
@@ -217,6 +219,34 @@ let rec make_grid dict grid =
                       first_letter)) list_of_ints |> ignore;
     make_grid t grid
 
+let string_of_matrix matrix = 
+  let init_list = ref [] in 
+  for i = 0 to (c_ROWS - 1) do
+    let s = ref "" in 
+    for j = 0 to (c_COLS - 1) do 
+      s := !s ^ " " ^ matrix.(i).(j)
+    done;
+    init_list := !s :: !init_list;
+  done;
+  !init_list
+
+let combine_boards lst1 lst2 = 
+  let rec combine_helper lst1 lst2 acc =  
+    match lst1, lst2 with
+    | [], [] -> acc
+    | [], _ -> failwith "lst2 longer than lst1"
+    | _, [] -> failwith "lst1 longer than lst2"
+    | h1 :: t1, h2 :: t2 -> 
+      combine_helper t1 t2 ((h1 ^ c_BOARD_SEP ^ h2) :: acc)
+  in combine_helper lst1 lst2 []
+
+let rec print_boards board_list = 
+  match board_list with
+  | [] -> ()
+  | h :: t -> 
+    print_endline h; 
+    print_boards t
+
 let print_matrix matrix = 
   for i = 0 to (c_ROWS - 1) do
     let s = ref "" in 
@@ -237,6 +267,9 @@ let print_player_ship_board game player =
 
 let print_dict dict = 
   make_grid dict (empty_board ()) |> print_matrix
+
+let string_of_dict dict = 
+  make_grid dict (empty_board ()) |> string_of_matrix
 
 let rec change_damage_list (x, y) list acc =
   match list with

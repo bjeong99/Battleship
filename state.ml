@@ -1,6 +1,8 @@
 let c_ROWS = 10
 let c_COLS = 10
 
+let c_BOARD_SEP = "    "
+
 type player = 
   | Player1
   | Player2
@@ -140,6 +142,33 @@ let guesses_to_matrix player game =
       grid.(y).(x) <- "X";
       guesses_to_matrix_helper t grid
   in guesses_to_matrix_helper player_dict grid
+
+let string_of_guesses player game = 
+  game |> guesses_to_matrix player |> Battleship.string_of_matrix
+
+let string_of_player_dict player game = 
+  match player with 
+  | Player1 ->
+    game.player_1_ship_dict |> Battleship.string_of_dict
+  | Player2 ->
+    game.player_2_ship_dict |> Battleship.string_of_dict
+
+let combine_boards lst1 lst2 = 
+  let rec combine_helper lst1 lst2 acc =  
+    match lst1, lst2 with
+    | [], [] -> acc
+    | [], _ -> failwith "lst2 longer than lst1"
+    | _, [] -> failwith "lst1 longer than lst2"
+    | h1 :: t1, h2 :: t2 -> 
+      combine_helper t1 t2 ((h1 ^ c_BOARD_SEP ^ h2) :: acc)
+  in combine_helper lst1 lst2 []
+
+let rec print_boards board_list = 
+  match board_list with
+  | [] -> ()
+  | h :: t -> 
+    print_endline h; 
+    print_boards t
 
 let print_guesses player game = 
   game |> guesses_to_matrix player |> Battleship.print_matrix
