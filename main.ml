@@ -207,11 +207,11 @@ let initialize_main () =
 (* Determine if player wants AI or not *)
 let print_ai_message () = 
   ANSITerminal.(print_string [green]
-                  {|\n\nPlease choose whether 
-                  you would like to play against an AI or not.\n|});
+                  "\n\nPlease choose whether 
+                  you would like to play against an AI or not.\n");
   ANSITerminal.(print_string [green]
-                  {|\n\nIf you choose to play against AI, 
-                  you are player 1 and the AI is player 2.\n|});
+                  "\n\nIf you choose to play against AI, 
+                  you are player 1 and the AI is player 2.\n");
   ANSITerminal.(print_string [green]
                   "\n\nPlease Enter yes, no, or quit.\n")
 
@@ -221,10 +221,10 @@ let print_ai_failure_message () =
 
 let print_difficulty_message () = 
   ANSITerminal.(print_string [green]
-                  {|\n\nPlease choose whether 
-                  the difficulty of the AI.\n|});
+                  "\n\nPlease choose whether 
+                  the difficulty of the AI.\n");
   ANSITerminal.(print_string [green]
-                  {|\n\nYou can choose easy or medium. .\n|})
+                  "\n\nYou can choose easy or medium. .\n")
 
 let print_difficulty_error () = 
   ANSITerminal.(print_string [green]
@@ -287,13 +287,13 @@ let print_lay_down_ships_phase color =
                   "\n\nPlease lay down your ships on the map. \n");
   ANSITerminal.(print_string [color]
                   "\n\nSpecify the placement as a column, followed
-by a space, then the row, followed by the space,
-for where you want the head of the ship to be. Next
-add a space and put in either left, right, up or down
-for the orientation of the ship. Finally,
-put in the type of ship, which is one
-of battleship, aircraft carrier, destroyer,
-cruiser or submarine. \n")
+                  by a space, then the row, followed by the space,
+                                   for where you want the head of the ship to be. Next
+                                         add a space and put in either left, right, up or down
+                                                                                      for the orientation of the ship. Finally,
+                                                                                                             put in the type of ship, which is one
+  of battleship, aircraft carrier, destroyer,
+     cruiser or submarine. \n")
 
 let print_quit () = 
   ANSITerminal.(print_string [green]
@@ -317,13 +317,13 @@ let print_off_gameboard () =
 
 let print_occupied_location () = 
   ANSITerminal.(print_string [green]
-                  {|\n\nYour coordinates for the ship 
-                  were occupied already. Try again.\n|})
+                  "\n\nYour coordinates for the ship 
+                  were occupied already. Try again.\n")
 
 let print_placed_already () = 
   ANSITerminal.(print_string [green]
-                  {|\n\nYou have placed all 
-                  the ships of that type already. Try again.\n|})
+                  "\n\nYou have placed all 
+                  the ships of that type already. Try again.\n")
 
 let print_remaining_ships player battleship = 
   let remaining_ships = 
@@ -466,8 +466,8 @@ let print_targeting_rules color =
                   "\n\nPlease target a location on the enemy map. \n");
   ANSITerminal.(print_string [color]
                   "\n\nSpecify the placement as a column by typing in
-                  target, a comma, the x coordinate, comma,
-                  and the y coordinate. \n")
+target, a comma, the x coordinate, comma,
+and the y coordinate. \n")
 
 let print_in_main_phase () = 
   ANSITerminal.(print_string [green]
@@ -853,8 +853,8 @@ let rec target_ship_with_ai state =
                   "\n\nPlease target a location on the enemy map. \n");
   ANSITerminal.(print_string [color]
                   "\n\nSpecify the placement as a column by typing in
-                  target, a comma, the x coordinate, comma,
-                  and the y coordinate. \n");
+target, a comma, the x coordinate, comma,
+and the y coordinate. \n");
   begin if player then 
       match read_line () with
       | s -> 
@@ -975,8 +975,8 @@ let rec target_ship state =
                   "\n\nPlease target a location on the enemy map. \n");
   ANSITerminal.(print_string [color]
                   "\n\nSpecify the placement as a column by typing in
-                  target, a comma, the x coordinate, comma,
-                  and the y coordinate. \n");
+target, a comma, the x coordinate, comma,
+and the y coordinate. \n");
   match read_line () with
   | s -> 
     match Command.parse s with
