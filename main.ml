@@ -286,14 +286,14 @@ let print_lay_down_ships_phase color =
   ANSITerminal.(print_string [color]
                   "\n\nPlease lay down your ships on the map. \n");
   ANSITerminal.(print_string [color]
-                  {|\n\nSpecify the placement as a column, followed
+                  "\n\nSpecify the placement as a column, followed
 by a space, then the row, followed by the space,
 for where you want the head of the ship to be. Next
 add a space and put in either left, right, up or down
 for the orientation of the ship. Finally,
 put in the type of ship, which is one
 of battleship, aircraft carrier, destroyer,
-cruiser or submarine. \n|})
+cruiser or submarine. \n")
 
 let print_quit () = 
   ANSITerminal.(print_string [green]
