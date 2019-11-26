@@ -1,3 +1,5 @@
+open Emoji
+
 let c_ROWS = 10
 let c_COLS = 10
 
@@ -207,7 +209,7 @@ let insert_ship (x, y) direction ship player dict =
     else Failure (dict, BoundsError)
 
 let empty_board () = 
-  Array.make_matrix 10 10 "_"
+  Array.make_matrix 10 10 Emoji.white_medium_square
 
 let rec make_grid dict grid = 
   match dict with
@@ -215,8 +217,8 @@ let rec make_grid dict grid =
   | (string, list_of_ints) :: t ->
     let first_letter = String.get (String.uppercase_ascii string) 0 |> Char.escaped in
     List.map (fun (x, y, z) -> grid.(y).(x) <- 
-                 (if z = Undamaged then first_letter else String.lowercase_ascii
-                      first_letter)) list_of_ints |> ignore;
+                 (if z = Undamaged then first_letter else Emoji.fire)) 
+      list_of_ints |> ignore;
     make_grid t grid
 
 let string_of_matrix matrix = 
@@ -248,8 +250,16 @@ let rec print_boards board_list =
     print_boards t
 
 let print_matrix matrix = 
+  let axis_x = ref "    A B C D E F G H I J\n" in 
+  print_endline !axis_x;
   for i = 0 to (c_ROWS - 1) do
-    let s = ref "" in 
+    let s = 
+    begin
+      match i with 
+      | 9 -> ref ((string_of_int (i + 1)) ^ " ");
+      | _ -> ref (" " ^ (string_of_int (i + 1)) ^ " ");
+    end
+    in
     for j = 0 to (c_COLS - 1) do 
       s := !s ^ " " ^ matrix.(i).(j)
     done;
