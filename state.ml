@@ -154,14 +154,21 @@ let string_of_player_dict player game =
     game.player_2_ship_dict |> Battleship.string_of_dict
 
 let combine_boards lst1 lst2 = 
-  let rec combine_helper lst1 lst2 acc =  
+  let x_axis = "    A B C D E F G H I J" ^ c_BOARD_SEP ^ "    A B C D E F G H I J" in
+  let empty = "" in 
+  let rec combine_helper lst1 lst2 acc digit=  
     match lst1, lst2 with
     | [], [] -> acc
     | [], _ -> failwith "lst2 longer than lst1"
     | _, [] -> failwith "lst1 longer than lst2"
     | h1 :: t1, h2 :: t2 -> 
-      combine_helper t1 t2 ((h1 ^ c_BOARD_SEP ^ h2) :: acc)
-  in combine_helper lst1 lst2 []
+      let digit_string = 
+        match digit with
+        | 10 -> string_of_int 10;
+        | x -> " " ^ (string_of_int x);
+      in
+      combine_helper t1 t2 ((digit_string ^ " " ^ h1 ^ c_BOARD_SEP ^ digit_string ^ " " ^ h2) :: acc) (digit - 1)
+  in x_axis :: empty :: (combine_helper lst1 lst2 [] 10)
 
 let rec print_boards board_list = 
   match board_list with

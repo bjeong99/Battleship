@@ -209,7 +209,7 @@ let insert_ship (x, y) direction ship player dict =
     else Failure (dict, BoundsError)
 
 let empty_board () = 
-  Array.make_matrix 10 10 Emoji.white_medium_square
+  Array.make_matrix 10 10 Emoji.water_wave
 
 let rec make_grid dict grid = 
   match dict with
@@ -254,11 +254,11 @@ let print_matrix matrix =
   print_endline !axis_x;
   for i = 0 to (c_ROWS - 1) do
     let s = 
-    begin
-      match i with 
-      | 9 -> ref ((string_of_int (i + 1)) ^ " ");
-      | _ -> ref (" " ^ (string_of_int (i + 1)) ^ " ");
-    end
+      begin
+        match i with 
+        | 9 -> ref ((string_of_int (i + 1)) ^ " ");
+        | _ -> ref (" " ^ (string_of_int (i + 1)) ^ " ");
+      end
     in
     for j = 0 to (c_COLS - 1) do 
       s := !s ^ " " ^ matrix.(i).(j)
