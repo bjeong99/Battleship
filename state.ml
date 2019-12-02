@@ -154,7 +154,7 @@ let string_of_player_dict player game =
     game.player_2_ship_dict |> Battleship.string_of_dict
 
 let combine_boards lst1 lst2 = 
-  let x_axis = "    A B C D E F G H I J" ^ c_BOARD_SEP ^ "    A B C D E F G H I J" in
+  let x_axis = "    A  B  C  D  E  F  G  H  I  J" ^ c_BOARD_SEP ^ "     A B C D E F G H I J" in
   let empty = "" in 
   let rec combine_helper lst1 lst2 acc digit=  
     match lst1, lst2 with

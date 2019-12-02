@@ -64,6 +64,20 @@ let process_number n =
    else false
 *)
 
+let char_to_coord n = 
+  match n with 
+  | "A"| "a" | "1" -> "1"
+  | "B"| "b" | "2" -> "2"
+  | "C"| "c" | "3" -> "3"
+  | "D"| "d" | "4" -> "4"
+  | "E"| "e" | "5" -> "5"
+  | "F"| "f" | "6" -> "6"
+  | "G"| "g" | "7" -> "7"
+  | "H"| "h" | "8" -> "8"
+  | "I"| "i" | "9" -> "9"
+  | "J"| "j" | "10" -> "10"
+  | _ -> "not a digit"
+
 let direction_list = [
   "up";
   "down";
@@ -96,19 +110,21 @@ let process_string s =
 let parse_elements str_lst = 
   match str_lst with
   | x :: y :: direction :: ship :: [] ->
-    if process_number x && 
+    let x_digit = char_to_coord x in 
+    if process_number x_digit && 
        process_number y && 
        process_string direction && 
        process_string ship &&
        process_direction direction &&
        process_ship_name ship 
-    then Valid (int_of_string x - 1, int_of_string y - 1, direction, ship)
+    then Valid (int_of_string x_digit - 1, int_of_string y - 1, direction, ship)
     else InvalidCommand
   | target :: x :: y :: [] ->
-    if process_number x && 
+    let x_digit = char_to_coord x in
+    if process_number x_digit && 
        process_number y &&
        target = c_TARGET
-    then Target (int_of_string x - 1, int_of_string y - 1)
+    then Target (int_of_string x_digit - 1, int_of_string y - 1)
     else InvalidCommand
   | _ -> InvalidCommand
 

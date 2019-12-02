@@ -207,13 +207,11 @@ let initialize_main () =
 (* Determine if player wants AI or not *)
 let print_ai_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nPlease choose whether 
-                  you would like to play against an AI or not.\n");
+                  "\n\nPlease choose whether you would like to play against an AI or not.\n");
   ANSITerminal.(print_string [green]
-                  "\n\nIf you choose to play against AI, 
-                  you are player 1 and the AI is player 2.\n");
+                  "If you choose to play against AI, you are player 1 and the AI is player 2.\n");
   ANSITerminal.(print_string [green]
-                  "\nPlease Enter yes, no, or quit.\n")
+                  "Please Enter yes, no, or quit.\n")
 
 let print_ai_failure_message () = 
   ANSITerminal.(print_string [green]
@@ -221,10 +219,9 @@ let print_ai_failure_message () =
 
 let print_difficulty_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nPlease choose whether 
-                  the difficulty of the AI.\n");
+                  "\n\nPlease choose whether the difficulty of the AI.\n");
   ANSITerminal.(print_string [green]
-                  "\n\nYou can choose easy or medium. .\n")
+                  "You can choose easy or medium.\n")
 
 let print_difficulty_error () = 
   ANSITerminal.(print_string [green]
@@ -285,15 +282,11 @@ let print_player2_add_ships state battleship ai_status diff =
 let print_lay_down_ships_phase color = 
   ANSITerminal.(print_string [color]
                   "\n\nPlease lay down your ships on the map. \n");
-  ANSITerminal.(print_string [color]
-                  ("\n\nSpecify the placement as a column, followed
-                  by a space, then the row, followed by the space,
-                                   for where you want the head of the ship to be. Next
-                                         add a space and put in either left, right, up or down
-                                                                                      for the orientation of the ship. Finally,
-                                                                                                             put in the type of ship, which is one
-  of battleship, aircraft carrier, destroyer,
-     cruiser or submarine. \n"))
+  ANSITerminal.(print_string [color] 
+                  ("\n\nSpecify the placement as (column, row, direction, ship"
+                   ^ " type. 
+The coordinates represent the head of the ship and the direction of the ship"
+                   ^ " can be listed as left, right, up, and down.\n"))
 
 let print_quit () = 
   ANSITerminal.(print_string [green]
@@ -326,9 +319,14 @@ let print_placed_already () =
                   the ships of that type already. Try again.\n")
 
 let print_remaining_ships player battleship = 
+  let color_player = 
+    match player with 
+    | true -> ANSITerminal.red 
+    | false -> ANSITerminal.blue 
+  in
   let remaining_ships = 
     Battleship.(remaining_ships_to_place (choose_player player) battleship) in 
-  print_endline "These are your remaining ships to place. ";
+  ANSITerminal.(print_string [color_player]) "These are your remaining ships to place.\n";
   List.map print_endline remaining_ships |> ignore
 
 type pregame_state = 
@@ -344,7 +342,7 @@ let parse_single_ship battleship player str =
   | Valid (x, y, direction, ship) -> begin
       let direction' = string_to_direction direction in 
       let ship' = string_to_ship ship in 
-      let player' = choose_player player in 
+      let player' = choose_player player in
       match insert_ship (x, y) direction' ship' player' battleship with
       | Battleship.Success battleship' -> 
         print_player_ship_board battleship' (choose_player player);

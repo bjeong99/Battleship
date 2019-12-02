@@ -217,7 +217,7 @@ let rec make_grid dict grid =
   | (string, list_of_ints) :: t ->
     let first_letter = String.get (String.uppercase_ascii string) 0 |> Char.escaped in
     List.map (fun (x, y, z) -> grid.(y).(x) <- 
-                 (if z = Undamaged then first_letter else Emoji.fire)) 
+                 (if z = Undamaged then (first_letter ^ " ") else Emoji.fire)) 
       list_of_ints |> ignore;
     make_grid t grid
 
@@ -250,7 +250,7 @@ let rec print_boards board_list =
     print_boards t
 
 let print_matrix matrix = 
-  let axis_x = ref "    A B C D E F G H I J\n" in 
+  let axis_x = ref "    A  B  C  D  E  F  G  H  I  J\n" in 
   print_endline !axis_x;
   for i = 0 to (c_ROWS - 1) do
     let s = 
