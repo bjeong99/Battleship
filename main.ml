@@ -254,16 +254,28 @@ let rec choose_difficulty () =
     print_difficulty_error (); choose_difficulty ()
 
 let determine_ai_difficulty state battleship ai_status diff = 
-  if not ai_status then ContinueGame (state, battleship, ai_status, diff)
+  if not ai_status then 
+    begin 
+      ANSITerminal.erase Screen;
+      ContinueGame (state, battleship, ai_status, diff);
+    end
   else begin
     match choose_difficulty () with
-    | AIEasy -> ContinueGame (state, battleship, ai_status, AIEasy)
-    | AIMedium -> ContinueGame (state, battleship, ai_status, AIMedium)
+    | AIEasy -> ANSITerminal.erase Screen;
+      ContinueGame (state, battleship, ai_status, AIEasy)
+    | AIMedium -> ANSITerminal.erase Screen;
+      ContinueGame (state, battleship, ai_status, AIMedium)
   end
 
 (* ########### Process AI ############# *)
 
 (* ########### Announce Player turn to lay down ships ############# *)
+let rec delay input =
+  ANSITerminal.(print_string [green]
+                  "Type clear to wipe the screen.\n");
+  match String.lowercase_ascii (read_line input) with
+  | "clear" -> ANSITerminal.erase Screen
+  | _ -> delay input
 
 let print_player1_add_ships state battleship ai_status diff = 
   ANSITerminal.(print_string [red]
@@ -365,7 +377,13 @@ let ai_to_string ((x, y), direction, ship) =
 
 let rec place_player1_ships state battleship ai_status diff = 
   if Battleship.(remaining_ships (choose_player true) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff)
+  then 
+    begin
+      delay();
+      ANSITerminal.(print_string [green] "\nPass the computer to player 2.\n\n");
+      delay();
+      ContinueGame (state, battleship, ai_status, diff)
+    end
   else begin
     let () = print_remaining_ships true battleship in 
     let color = ANSITerminal.red in (* for player 1, use red *)
@@ -420,7 +438,9 @@ let print_entering_targeting_phase state battleship ai_status diff =
   ANSITerminal.(print_string [green]
                   "Player 1 will target first and alternate with player 2.\n");
   ANSITerminal.(print_string [green]
-                  "The game continues until victory or a player quits. \n");
+                  "The game continues until victory or a player quits. \n\n");              
+  delay ();
+  ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
   ContinueGame (state, battleship, ai_status, diff)
 
 let build_in_game_state state battleship ai_status diff = 
@@ -461,7 +481,7 @@ let print_player_grid player state =
 
 let print_boards_side_by_side player state = 
   ANSITerminal.(print_string [green]
-                  "\n\nYour grid is the left and opponent is the right.\n");
+                  "\n\nYour grid is the left and opponent is the right.\n\n");
   let player_dict = 
     State.string_of_player_dict (State.bool_to_player player) state in 
   let player_guesses = 
@@ -479,19 +499,19 @@ and the y coordinate. \n")
 
 let print_in_main_phase () = 
   ANSITerminal.(print_string [green]
-                  "\n\nWe are no longer in the pregame phase. Try again.\n")
+                  "\nWe are no longer in the pregame phase. Try again.\n")
 
 let print_already_targeted () = 
   ANSITerminal.(print_string [green]
-                  "\n\nYou cannot target a location you previously targeted.\n")
+                  "\nYou cannot target a location you previously targeted.\n")
 
 let hit_ship_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nYou hit a ship.\n")
+                  "\nYou hit a ship.\n")
 
 let miss_ship_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nYou did not hit a ship.\n")
+                  "\nYou did not hit a ship.\n\n")
 
 let sink_ship_message () = 
   ANSITerminal.(print_string [green]
@@ -499,7 +519,7 @@ let sink_ship_message () =
 
 let not_sink_ship_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nYou did not sink a ship.\n")
+                  "\nYou did not sink a ship.\n\n")
 
 let after_move_message () = 
   ANSITerminal.(print_string [green]
@@ -542,6 +562,11 @@ let get_dfficulty_targeting_func diff =
   | AIMedium -> target_medium_ai
 
 let legal_target rec_func x y player state battleship ai_status diff = 
+  let string_opp_player =
+    match player with
+    | true -> "Player 2"
+    | false -> "Player 1"
+  in 
   match target_ship (x, y) (bool_to_player player) state with
   | State.Failure (new_state, CoordinateVisited) ->
     print_already_targeted (); 
@@ -556,12 +581,18 @@ let legal_target rec_func x y player state battleship ai_status diff =
     print_sunk_hit_message ship_hit ship_sunk;
     if check_victory (bool_to_player player) new_state 
     then let () = print_winner player ai_status in VictoryGame
-    else rec_func (Some (new_state |> update_player)) battleship ai_status diff
+    else 
+      begin
+        delay ();
+        ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+        rec_func (Some (new_state |> update_player)) battleship ai_status diff
+      end
 
 let rec target state_option battleship ai_status diff = 
   let state = get_state_from state_option in 
   let player = get_current_player state in
   let color = choose_color player in 
+  delay ();
   print_player_move_message player;
   print_boards_side_by_side player state;
   (*print_opponent_grid player state;
@@ -584,6 +615,7 @@ let rec target state_option battleship ai_status diff =
       print_in_main_phase (); target (Some state) battleship ai_status diff
     | Target (x, y) -> 
       legal_target target x y player state battleship ai_status diff
+
   end
 
 
@@ -611,18 +643,19 @@ let finish_game game_status =
 
 let () = 
   ()
-  |> print_welcome_message 
-  |> initialize_main 
-  |> (>>>) determine_ai_status
-  |> (>>>) determine_ai_difficulty
-  |> (>>>) print_player1_add_ships
-  |> (>>>) place_player1_ships 
-  |> (>>>) print_player2_add_ships
-  |> (>>>) place_player2_ships
-  |> (>>>) print_entering_targeting_phase 
-  |> (>>>) build_in_game_state
-  |> (>>>) target
-  |> finish_game
+  |> fun () -> ANSITerminal.erase Screen
+               |> print_welcome_message 
+               |> initialize_main 
+               |> (>>>) determine_ai_status
+               |> (>>>) determine_ai_difficulty
+               |> (>>>) print_player1_add_ships
+               |> (>>>) place_player1_ships 
+               |> (>>>) print_player2_add_ships
+               |> (>>>) place_player2_ships
+               |> (>>>) print_entering_targeting_phase 
+               |> (>>>) build_in_game_state
+               |> (>>>) target
+               |> finish_game
 
 (* ########### Running Game ############# *)
 
