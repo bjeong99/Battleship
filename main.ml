@@ -296,7 +296,7 @@ let print_lay_down_ships_phase color =
                   "\n\nPlease lay down your ships on the map. \n");
   ANSITerminal.(print_string [color] 
                   ("\n\nSpecify the placement as (column, row, direction, ship"
-                   ^ " type. 
+                   ^ " type). 
 The coordinates represent the head of the ship and the direction of the ship"
                    ^ " can be listed as left, right, up, and down.\n"))
 
@@ -400,7 +400,13 @@ let rec place_player1_ships state battleship ai_status diff =
 
 let rec place_player2_ships state battleship ai_status diff = 
   if Battleship.(remaining_ships (choose_player false) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff)
+  then
+    begin
+      delay();
+      ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
+      delay();
+      ContinueGame (state, battleship, ai_status, diff)
+    end
   else begin
     let () = print_remaining_ships false battleship in 
     let color = ANSITerminal.blue in (* for player 2, use blue *)
@@ -439,8 +445,6 @@ let print_entering_targeting_phase state battleship ai_status diff =
                   "Player 1 will target first and alternate with player 2.\n");
   ANSITerminal.(print_string [green]
                   "The game continues until victory or a player quits. \n\n");              
-  delay ();
-  ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
   ContinueGame (state, battleship, ai_status, diff)
 
 let build_in_game_state state battleship ai_status diff = 
@@ -643,19 +647,20 @@ let finish_game game_status =
 
 let () = 
   ()
-  |> fun () -> ANSITerminal.erase Screen
-               |> print_welcome_message 
-               |> initialize_main 
-               |> (>>>) determine_ai_status
-               |> (>>>) determine_ai_difficulty
-               |> (>>>) print_player1_add_ships
-               |> (>>>) place_player1_ships 
-               |> (>>>) print_player2_add_ships
-               |> (>>>) place_player2_ships
-               |> (>>>) print_entering_targeting_phase 
-               |> (>>>) build_in_game_state
-               |> (>>>) target
-               |> finish_game
+  |> fun () -> ANSITerminal.resize 125 25
+               |> fun () -> ANSITerminal.erase Screen
+                            |> print_welcome_message 
+                            |> initialize_main 
+                            |> (>>>) determine_ai_status
+                            |> (>>>) determine_ai_difficulty
+                            |> (>>>) print_player1_add_ships
+                            |> (>>>) place_player1_ships 
+                            |> (>>>) print_player2_add_ships
+                            |> (>>>) place_player2_ships
+                            |> (>>>) print_entering_targeting_phase 
+                            |> (>>>) build_in_game_state
+                            |> (>>>) target
+                            |> finish_game
 
 (* ########### Running Game ############# *)
 
