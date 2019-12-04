@@ -270,12 +270,6 @@ let determine_ai_difficulty state battleship ai_status diff =
 (* ########### Process AI ############# *)
 
 (* ########### Announce Player turn to lay down ships ############# *)
-let rec delay input =
-  ANSITerminal.(print_string [green]
-                  "Type clear to wipe the screen.\n");
-  match String.lowercase_ascii (read_line input) with
-  | "clear" -> ANSITerminal.erase Screen
-  | _ -> delay input
 
 let print_player1_add_ships state battleship ai_status diff = 
   ANSITerminal.(print_string [red]
@@ -288,6 +282,17 @@ let print_player2_add_ships state battleship ai_status diff =
   ContinueGame (state, battleship, ai_status, diff)
 
 (* ########### Announce Player turn to lay down ships ############# *)
+
+(* ########### Delay ############# *)
+
+let rec delay input =
+  ANSITerminal.(print_string [green]
+                  "Type clear to wipe the screen.\n");
+  match String.lowercase_ascii (read_line input) with
+  | "clear" -> ANSITerminal.erase Screen
+  | _ -> delay input
+
+(* ########### Delay ############# *)
 
 (* ########### Pregame : add ships to board ############# *)
 
@@ -438,25 +443,43 @@ let rec place_player2_ships state battleship ai_status diff =
 
 (* ########### Decide Whether to Move On or Not ############# *)
 
+let print_change_phase_error () = 
+  ANSITerminal.(print_string [green]
+                  "You had an error in your command.\n")
+
 let print_change_phase () = 
   ANSITerminal.(print_string [green]
-                  "Enter yes or no to change the phase.\n")
+                  "Please enter yes or no to finish placing ships.\n")
 
 let rec change_phase state battleship ai_status diff = 
-  print_change_phase ();
-  match () |> read_line |> parse with
-  | YesNo true ->
-    ContinueGame (state, battleship, ai_status, diff)
-  | YesNo false -> 
-    print_change_phase (); change_phase state battleship ai_status diff
-  | Quit -> 
-    print_change_phase (); change_phase state battleship ai_status diff
-  | InvalidCommand -> 
-    print_change_phase (); change_phase state battleship ai_status diff
-  | Valid _ -> 
-    print_change_phase (); change_phase state battleship ai_status diff
-  | Target _ -> 
-    print_change_phase (); change_phase state battleship ai_status diff
+  (* prevent blocking for AI ship placement *)
+  if ai_status then ContinueGame (state, battleship, ai_status, diff) 
+  else begin
+    print_change_phase ();
+    match () |> read_line |> parse with
+    | YesNo true ->
+      ContinueGame (state, battleship, ai_status, diff)
+    | YesNo false -> 
+      print_change_phase_error ();
+      print_change_phase (); 
+      change_phase state battleship ai_status diff
+    | Quit -> 
+      print_change_phase_error ();  
+      print_quit (); 
+      EndGame
+    | InvalidCommand -> 
+      print_change_phase_error ();
+      print_change_phase (); 
+      change_phase state battleship ai_status diff
+    | Valid _ -> 
+      print_change_phase_error ();
+      print_change_phase (); 
+      change_phase state battleship ai_status diff
+    | Target _ -> 
+      print_change_phase_error ();
+      print_change_phase (); 
+      change_phase state battleship ai_status diff
+  end
 
 (* ########### Decide Whether to Move On or Not ############# *)
 
@@ -679,8 +702,10 @@ let () =
                             |> (>>>) determine_ai_difficulty
                             |> (>>>) print_player1_add_ships
                             |> (>>>) place_player1_ships 
+                            |> (>>>) change_phase
                             |> (>>>) print_player2_add_ships
                             |> (>>>) place_player2_ships
+                            |> (>>>) change_phase
                             |> (>>>) print_entering_targeting_phase 
                             |> (>>>) build_in_game_state
                             |> (>>>) target
