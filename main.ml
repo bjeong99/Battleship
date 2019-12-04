@@ -381,7 +381,7 @@ let rec place_player1_ships state battleship ai_status diff =
     begin
       delay();
       ANSITerminal.(print_string [green] "\nPass the computer to player 2.\n\n");
-      delay();
+      (* delay(); *)
       ContinueGame (state, battleship, ai_status, diff)
     end
   else begin
@@ -404,7 +404,7 @@ let rec place_player2_ships state battleship ai_status diff =
     begin
       delay();
       ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
-      delay();
+      (* delay(); *)
       ContinueGame (state, battleship, ai_status, diff)
     end
   else begin
@@ -596,7 +596,7 @@ let rec target state_option battleship ai_status diff =
   let state = get_state_from state_option in 
   let player = get_current_player state in
   let color = choose_color player in 
-  delay ();
+  (* delay (); *)
   print_player_move_message player;
   print_boards_side_by_side player state;
   (*print_opponent_grid player state;
