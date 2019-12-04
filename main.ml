@@ -436,6 +436,30 @@ let rec place_player2_ships state battleship ai_status diff =
 
 (* ########### Pregame : add ships to board ############# *)
 
+(* ########### Decide Whether to Move On or Not ############# *)
+
+let print_change_phase () = 
+  ANSITerminal.(print_string [green]
+                  "Enter yes or no to change the phase.\n")
+
+let rec change_phase state battleship ai_status diff = 
+  print_change_phase ();
+  match () |> read_line |> parse with
+  | YesNo true ->
+    ContinueGame (state, battleship, ai_status, diff)
+  | YesNo false -> 
+    print_change_phase (); change_phase state battleship ai_status diff
+  | Quit -> 
+    print_change_phase (); change_phase state battleship ai_status diff
+  | InvalidCommand -> 
+    print_change_phase (); change_phase state battleship ai_status diff
+  | Valid _ -> 
+    print_change_phase (); change_phase state battleship ai_status diff
+  | Target _ -> 
+    print_change_phase (); change_phase state battleship ai_status diff
+
+(* ########### Decide Whether to Move On or Not ############# *)
+
 (* ########### Entering Trageting Phase ############# *)
 
 let print_entering_targeting_phase state battleship ai_status diff = 
