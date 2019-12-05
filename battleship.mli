@@ -39,6 +39,7 @@ val string_to_ship: string -> ship_type
 val insert: string -> int * int -> direction -> t -> t
 *)
 val insert_ship: int * int -> direction -> ship_type -> player -> t -> action 
+val remove_ship : string -> player -> t -> t
 (*
 val remove: string -> t -> t
 val check_bounds: int * int -> int -> direction -> bool

@@ -4,6 +4,8 @@ type command =
   | Valid of int * int * string * string
   | Target of int * int
   | YesNo of bool
+  | Remove of string
+  | FinishPlacement
   (*| Ingame of int * int * string * string*)
 
 let c_TARGET = "target"
@@ -106,6 +108,8 @@ let process_string s =
 (** the command I want to parse is
     x, y, direction, ship*)
 
+let c_REMOVE = "remove"
+let c_FINISH = "finish"
 
 let parse_elements str_lst = 
   match str_lst with
@@ -126,6 +130,16 @@ let parse_elements str_lst =
        target = c_TARGET
     then Target (int_of_string x_digit - 1, int_of_string y - 1)
     else InvalidCommand
+  | remove :: ship :: [] ->
+    if remove = c_REMOVE &&
+       process_string ship &&
+       process_ship_name ship 
+    then Remove (ship)
+    else InvalidCommand
+  | finish :: [] ->
+    if finish = c_FINISH 
+    then FinishPlacement
+    else InvalidCommand
   | _ -> InvalidCommand
 
 let c_QUIT = "quit"
@@ -133,6 +147,7 @@ let c_YES = "yes"
 let c_NO = "no"
 let c_EASY = "easy"
 let c_MEDIUM = "medium"
+
 
 let parse_quit str = 
   if str = c_QUIT then Quit 

@@ -29,8 +29,10 @@ type player =
 type list_t = (string * ((int * int * status) list) ) list
 
 type t = {
+  player_1_ships_placed : ship_type list;
   player_1_ships_remaining : ship_type list;
   player_1_ships : (string * ((int * int * status) list) ) list;
+  player_2_ships_placed : ship_type list;
   player_2_ships_remaining : ship_type list;
   player_2_ships : (string * ((int * int * status) list) ) list;
 }
@@ -55,8 +57,10 @@ let starter_ship_list = [
 ]
 
 let empty = {
+  player_1_ships_placed = [];
   player_1_ships_remaining = starter_ship_list;
   player_1_ships = [];
+  player_2_ships_placed = [];
   player_2_ships_remaining = starter_ship_list;
   player_2_ships = [];
 }
@@ -83,11 +87,20 @@ let string_to_ship ship =
 
 let ship_to_string ship = 
   match ship with
-  | AircraftCarrier -> "AircraftCarrier"
+  | AircraftCarrier -> "aircraftcarrier"
+  | Battleship -> "battleship"
+  | Destroyer  -> "destroyer"
+  | Cruiser  -> "cruiser"
+  | Submarine  -> "submarine"
+
+let pretty_print_ship_to_string ship = 
+  match ship with
+  | AircraftCarrier -> "Aircraft Carrier"
   | Battleship -> "Battleship"
   | Destroyer  -> "Destroyer"
   | Cruiser  -> "Cruiser"
   | Submarine  -> "Submarine"
+
 
 let string_to_direction str = 
   let strlow = String.lowercase_ascii str in 
@@ -185,6 +198,7 @@ let insert_ship (x, y) direction ship player dict =
         begin if check_unoccupied (x, y) (ship_length ship) direction dict.player_1_ships
           then Success 
               {dict with
+               player_1_ships_placed = ship :: dict.player_1_ships_placed;
                player_1_ships = insert (ship_to_string ship) (x, y) direction dict.player_1_ships;
                player_1_ships_remaining = List.filter (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
           else Failure (dict, OccupiedTile)
@@ -200,6 +214,7 @@ let insert_ship (x, y) direction ship player dict =
           begin if check_unoccupied (x, y) (ship_length ship) direction dict.player_2_ships
             then Success 
                 {dict with 
+                 player_2_ships_placed = ship :: dict.player_2_ships_placed;
                  player_2_ships = insert (ship_to_string ship) (x, y) direction dict.player_2_ships;
                  player_2_ships_remaining = List.filter (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
             else Failure (dict, OccupiedTile)
@@ -309,7 +324,42 @@ let remaining_ships_to_place player game =
      game.player_1_ships_remaining
    | Player2 ->
      game.player_2_ships_remaining)
+  |> List.map pretty_print_ship_to_string
+
+
+let check_ship_can_be_removed ship player game = 
+  (match player with
+   | Player1 ->
+     game.player_1_ships_placed
+   | Player2 ->
+     game.player_2_ships_placed)
   |> List.map ship_to_string
+  |> (fun lst -> print_endline "Contents of list"; lst)
+  |> (fun lst -> lst |> List.map print_endline |> ignore; lst)
+  |> List.mem ship
+
+let remove_ship_helper ship player game = 
+  match player with
+  | Player1 -> {
+      game with
+      player_1_ships = remove ship game.player_1_ships;
+      player_1_ships_placed = 
+        game.player_1_ships_placed |> List.filter (fun elt -> elt <> string_to_ship ship);
+      player_1_ships_remaining =
+        (string_to_ship ship) :: game.player_1_ships_remaining}
+  | Player2 -> {
+      game with
+      player_2_ships = remove ship game.player_2_ships;
+      player_2_ships_placed = 
+        game.player_2_ships_placed |> List.filter (fun elt -> elt <> string_to_ship ship);
+      player_2_ships_remaining =
+        (string_to_ship ship) :: game.player_2_ships_remaining}
+
+let remove_ship ship player game = 
+  if not (check_ship_can_be_removed ship player game) then game
+  else 
+    let () = print_endline ship in
+    remove_ship_helper ship player game
 
 let check_all_ships_damaged dict = 
   dict 
@@ -359,6 +409,9 @@ let create_pairs m n =
       acc
   in create_rows m n []
 
+(** [ship_type_to_ship_name ship] convents [ship] to
+    its standardized string name, which is the same
+    as the command a player enters into the terminal. *)
 let ship_type_to_ship_name ship = 
   match ship with
   | AircraftCarrier -> "aircraftcarrier"
@@ -367,14 +420,46 @@ let ship_type_to_ship_name ship =
   | Cruiser  -> "cruiser"
   | Submarine  -> "submarine"
 
+(** [randomly_laydown_ships_helper player game] is the new game
+    with ONE randomly chosen ship placed in a random location in 
+    a random direction for the indicated [player].
+    THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
+    AT THAT LOCATION, for example due to another ship
+    in the way, or going off the board. *)
+let randomly_laydown_ships_helper player game = 
+  match player with
+  | Player1 ->
+    let () = Random.self_init () in 
+    let remaining_ships_num = List.length game.player_1_ships_remaining in 
+    let random_ship = List.nth (game.player_1_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
+    let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
+    let pairs_list = create_pairs c_ROWS c_COLS in 
+    let random_position = choose_target pairs_list in 
+    (random_position, random_direction, random_ship)
+  | Player2 -> 
+    let () = Random.self_init () in 
+    let remaining_ships_num = List.length game.player_2_ships_remaining in 
+    let random_ship = List.nth (game.player_2_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
+    let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
+    let pairs_list = create_pairs c_ROWS c_COLS in 
+    let random_position = choose_target pairs_list in 
+    (random_position, random_direction, random_ship)
+
+(** [random_ship player game] will randomly place ONE ship for 
+    the [player] and create a new game with 
+    a ship randomly placed in a random location
+    in a random location. 
+    THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
+    AT THAT LOCATION, for example due to another ship
+    in the way, or going off the board.*)
+let random_ship player game = 
+  randomly_laydown_ships_helper player game
+
+(** [randomly_laydownn_ships game] is the new game  
+    with player2, the AI, having ONE random ship placed in a random
+    location, in a random direction. 
+    THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
+    AT THAT LOCATION, for example due to another ship
+    in the way, or going off the board.*)
 let randomly_laydown_ships game = 
-  let () = Random.self_init () in 
-  let remaining_ships_num = List.length game.player_2_ships_remaining in 
-  let random_ship = List.nth (game.player_2_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
-  let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
-  let pairs_list = create_pairs c_ROWS c_COLS in 
-  let random_position = choose_target pairs_list in 
-  (random_position, random_direction, random_ship)
-
-
-
+  randomly_laydown_ships_helper Player2 game

@@ -4,6 +4,8 @@ type command =
   | Valid of int * int * string * string
   | Target of int * int
   | YesNo of bool
+  | Remove of string
+  | FinishPlacement
 
 type difficulty = 
   | Easy

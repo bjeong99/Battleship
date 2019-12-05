@@ -365,6 +365,7 @@ let remove_ship ship player game =
   if not (check_ship_can_be_removed ship player game) then game
   else remove_ship_helper ship player game
 
+
 let check_all_ships_damaged dict = 
   dict 
   |> List.fold_left (fun init (name, pos_list) -> pos_list :: init) [] 
