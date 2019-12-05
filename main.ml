@@ -277,9 +277,14 @@ let print_player1_add_ships state battleship ai_status diff =
   ContinueGame (state, battleship, ai_status, diff)
 
 let print_player2_add_ships state battleship ai_status diff = 
-  ANSITerminal.(print_string [blue]
-                  "\n\nPlease place your ships Player Two. \n");
-  ContinueGame (state, battleship, ai_status, diff)
+  if ai_status then 
+    let () = ANSITerminal.(print_string [blue]
+                             "\n\nThe AI will now lay down its ships. \n") in 
+    ContinueGame (state, battleship, ai_status, diff)
+  else
+    let () = ANSITerminal.(print_string [blue]
+                             "\n\nPlease place your ships Player Two. \n") in 
+    ContinueGame (state, battleship, ai_status, diff)
 
 (* ########### Announce Player turn to lay down ships ############# *)
 
@@ -403,6 +408,7 @@ let rec place_player1_ships state battleship ai_status diff =
   | PGContinue battleship' -> 
     place_player1_ships state battleship' ai_status diff
   | PGFinishTurn battleship' ->
+    ANSITerminal.(print_string [green] "\nPass the computer to player 2.\n\n");
     ContinueGame (state, battleship', ai_status, diff)
 
 
@@ -433,6 +439,74 @@ let rec place_player1_ships state battleship ai_status diff =
   end
 *)
 
+let rec place_single_ai_ship battleship player str = 
+  match parse str with
+  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement -> 
+    failwith "Violates preconditions of place_single_ai_ship and place_ai_player2_ships"
+  | Valid (x, y, direction, ship) -> begin
+      let direction' = string_to_direction direction in 
+      let ship' = string_to_ship ship in 
+      let player' = choose_player player in
+      match insert_ship (x, y) direction' ship' player' battleship with
+      | Battleship.Success battleship' -> 
+        PGContinue battleship'
+      | Battleship.Failure (battleship', BoundsError) ->
+        PGContinue battleship'
+      | Battleship.Failure (battleship', OccupiedTile) ->
+        PGContinue battleship'
+      | Battleship.Failure (battleship', OutOfShips) ->
+        PGContinue battleship'
+      | Battleship.Failure (_, NonexistShip) ->
+        failwith "Remove Unimplemented"
+    end
+
+
+
+let rec place_ai_player2_ships state battleship ai_status diff = 
+  if Battleship.(remaining_ships (choose_player false) battleship) = 0 
+  then ContinueGame (state, battleship, ai_status, diff)
+  else 
+    let ai_result = 
+      print_endline "AI PLacement";
+      battleship 
+      |> randomly_laydown_ships 
+      |> ai_to_string 
+      |> place_single_ai_ship battleship false in begin
+      match ai_result with
+      | PGQuit -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+      | PGContinue battleship' -> 
+        place_ai_player2_ships state battleship' ai_status diff
+      | PGFinishTurn battleship' -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+    end
+
+(* This is the Human player 2 manually placing ships *)
+let rec place_human_player2_ships state battleship ai_status diff = 
+  let () = print_remaining_ships false battleship in 
+  let color = ANSITerminal.blue in (* for player 2, use blue *)
+  print_lay_down_ships_phase color;
+  let result_of_adding_ship = 
+    () 
+    |> read_line 
+    |> parse_single_ship battleship false in begin
+    match result_of_adding_ship with
+    | PGQuit -> EndGame
+    | PGContinue battleship' -> 
+      place_human_player2_ships state battleship' ai_status diff
+    | PGFinishTurn battleship' ->
+      ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
+      ContinueGame (state, battleship', ai_status, diff)
+  end
+
+(* experimental code place_player2_ships  *)
+let rec place_player2_ships state battleship ai_status diff = 
+  if ai_status then place_ai_player2_ships state battleship ai_status diff
+  else place_human_player2_ships state battleship ai_status diff
+
+
+
+(*
 let rec place_player2_ships state battleship ai_status diff = 
   if Battleship.(remaining_ships (choose_player false) battleship) = 0 
   then
@@ -468,6 +542,7 @@ let rec place_player2_ships state battleship ai_status diff =
           place_player2_ships state battleship' ai_status diff
       end
   end
+*)
 
 (* ########### Pregame : add ships to board ############# *)
 
@@ -706,6 +781,8 @@ let rec target state_option battleship ai_status diff =
     | Target (x, y) -> 
       legal_target target x y player state battleship ai_status diff
     | Remove _ ->
+      print_in_main_phase (); target (Some state) battleship ai_status diff
+    | FinishPlacement ->
       print_in_main_phase (); target (Some state) battleship ai_status diff
   end
 
