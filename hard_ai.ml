@@ -11,6 +11,16 @@ type t = {
   locations_targeted : point list;
 }
 
+let create_pairs m n = 
+  let rec create_rows m n acc =
+    if m > 0 then 
+      let init = List.init n (fun elt -> m) in
+      let columns = List.init n (fun elt -> elt + 1) in 
+      create_rows (m - 1) n (acc @ List.combine init columns)
+    else 
+      acc
+  in create_rows m n []
+
 let initialize_hard_ai = {
   guess_phase = true;
   target_horizontal = true;
@@ -18,9 +28,14 @@ let initialize_hard_ai = {
   hit_coord = None;
   horizontal_points = [];
   vertical_points = [];
-  remaining_coords = [];
+  remaining_coords = create_pairs 10 10;
   locations_targeted = [];
 }
+
+(** [get_guess phase ai] is the targeting phase the [ai] is in, either
+    the random or smart phase. *)
+let get_guess_phase ai = 
+  ai.guess_phase
 
 (** [choose_random_target remaining_coords] is a random
     coordinate pair from [remaining_coords]. 

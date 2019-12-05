@@ -182,26 +182,32 @@ type ai_difficulty =
   | AIHard
   | AIInsane
 
+(* ########### Instantiate Hard AI ############# *)
+
+let hard_ai = initialize_hard_ai
+
+(* ########### Instantiate Hard AI ############# *)
+
 (* ########### MONADS ############# *)
 (* MONAD in order to simplify code *)
 type main_state = 
-  | ContinueGame of (State.t option) * Battleship.t * bool * ai_difficulty
+  | ContinueGame of (State.t option) * Battleship.t * bool * ai_difficulty * Hard_ai.t
   | VictoryGame
   | EndGame
 
 (* Monad bind *)
 let (>>>) f x = 
   match x with
-  | ContinueGame (Some state, battleship, ai_status, diff ) -> 
-    f (Some state) battleship ai_status diff
-  | ContinueGame (None, battleship, ai_status, diff) -> 
-    f None battleship ai_status diff
+  | ContinueGame (Some state, battleship, ai_status, diff, ai) -> 
+    f (Some state) battleship ai_status diff ai
+  | ContinueGame (None, battleship, ai_status, diff, ai) -> 
+    f None battleship ai_status diff ai
   | VictoryGame -> VictoryGame
   | EndGame -> EndGame
 
 (* initialize monad *)
 let initialize_main () = 
-  ContinueGame (None, Battleship.empty, false, AIEasy)
+  ContinueGame (None, Battleship.empty, false, AIEasy, hard_ai)
 
 (* ########### MONADS ############# *)
 
@@ -224,11 +230,11 @@ let print_difficulty_message () =
   ANSITerminal.(print_string [green]
                   "\n\nPlease choose whether the difficulty of the AI.\n");
   ANSITerminal.(print_string [green]
-                  "You can choose easy or medium.\n")
+                  "You can choose easy, medium or hard.\n")
 
 let print_difficulty_error () = 
   ANSITerminal.(print_string [green]
-                  "\n\nPlease enter easy or medium.\n")
+                  "\n\nPlease enter easy, medium or hard.\n")
 
 type check_ai = 
   | AIContinue of bool
@@ -242,10 +248,10 @@ let rec choose_ai () =
   | Quit -> AIQuit
   | _ -> print_ai_failure_message (); choose_ai ()
 
-let determine_ai_status state battleship ai_status diff = 
+let determine_ai_status state battleship ai_status diff ai = 
   match choose_ai () with
-  | AIContinue true -> ContinueGame (state, battleship, true, diff)
-  | AIContinue false -> ContinueGame (state, battleship, false, diff)
+  | AIContinue true -> ContinueGame (state, battleship, true, diff, ai)
+  | AIContinue false -> ContinueGame (state, battleship, false, diff, ai)
   | AIQuit -> EndGame
 
 let rec choose_difficulty () = 
@@ -258,20 +264,20 @@ let rec choose_difficulty () =
   | InvalidDifficulty -> 
     print_difficulty_error (); choose_difficulty ()
 
-let determine_ai_difficulty state battleship ai_status diff = 
+let determine_ai_difficulty state battleship ai_status diff ai = 
   if not ai_status then 
     begin 
       ANSITerminal.erase Screen;
-      ContinueGame (state, battleship, ai_status, diff);
+      ContinueGame (state, battleship, ai_status, diff, ai);
     end
   else begin
     match choose_difficulty () with
     | AIEasy -> ANSITerminal.erase Screen;
-      ContinueGame (state, battleship, ai_status, AIEasy)
+      ContinueGame (state, battleship, ai_status, AIEasy, ai)
     | AIMedium -> ANSITerminal.erase Screen;
-      ContinueGame (state, battleship, ai_status, AIMedium)
+      ContinueGame (state, battleship, ai_status, AIMedium, ai)
     | AIHard -> ANSITerminal.erase Screen;
-      ContinueGame (state, battleship, ai_status, AIHard)
+      ContinueGame (state, battleship, ai_status, AIHard, ai)
     | AIInsane -> 
       failwith "unimplemented"
   end
@@ -280,20 +286,20 @@ let determine_ai_difficulty state battleship ai_status diff =
 
 (* ########### Announce Player turn to lay down ships ############# *)
 
-let print_player1_add_ships state battleship ai_status diff = 
+let print_player1_add_ships state battleship ai_status diff ai = 
   ANSITerminal.(print_string [red]
                   "\n\nPlease place your ships Player One. \n");
-  ContinueGame (state, battleship, ai_status, diff)
+  ContinueGame (state, battleship, ai_status, diff, ai)
 
-let print_player2_add_ships state battleship ai_status diff = 
+let print_player2_add_ships state battleship ai_status diff ai = 
   if ai_status then 
     let () = ANSITerminal.(print_string [blue]
                              "\n\nThe AI will now lay down its ships. \n") in 
-    ContinueGame (state, battleship, ai_status, diff)
+    ContinueGame (state, battleship, ai_status, diff, ai)
   else
     let () = ANSITerminal.(print_string [blue]
                              "\n\nPlease place your ships Player Two. \n") in 
-    ContinueGame (state, battleship, ai_status, diff)
+    ContinueGame (state, battleship, ai_status, diff, ai)
 
 (* ########### Announce Player turn to lay down ships ############# *)
 
@@ -403,11 +409,11 @@ let parse_player_command battleship player str =
   | Random -> PGRandom
 
 let ai_to_string ((x, y), direction, ship) = 
-  string_of_int (x) ^ " " ^ string_of_int (y) ^ " " ^ direction ^ " " ^ ship
+  string_of_int (x) ^ " " ^ string_of_int (y) ^ " " ^ direction ^ " " ^ ship (* used to be Comma not space *)
 
 let rec place_single_ai_ship battleship player str = 
   match parse str with
-  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement | Random-> 
+  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement | Random -> 
     failwith "Violates preconditions of place_single_ai_ship and place_ai_player2_ships"
   | Valid (x, y, direction, ship) -> begin
       let direction' = string_to_direction direction in 
@@ -426,9 +432,9 @@ let rec place_single_ai_ship battleship player str =
         failwith "Remove Unimplemented"
     end
 
-let rec place_ai_player2_ships state battleship ai_status diff player = 
+let rec place_ai_player2_ships state battleship ai_status diff ai player = 
   if Battleship.(remaining_ships (choose_player player) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff)
+  then ContinueGame (state, battleship, ai_status, diff, ai)
   else 
     let ai_result = 
       print_endline "AI Placement";
@@ -440,16 +446,16 @@ let rec place_ai_player2_ships state battleship ai_status diff player =
       | PGQuit -> (* impossible for AI to do *)
         failwith "illegal for AI"
       | PGContinue battleship' -> 
-        place_ai_player2_ships state battleship' ai_status diff player
+        place_ai_player2_ships state battleship' ai_status diff ai player
       | PGFinishTurn battleship' -> (* impossible for AI to do *)
         failwith "illegal for AI"
       | PGRandom -> (* impossible for AI to do *)
         failwith "illegal for AI"
     end
 
-let rec place_player_ships_randomly state battleship ai_status diff player = 
+let rec place_player_ships_randomly state battleship ai_status diff ai player = 
   if Battleship.(remaining_ships (choose_player player) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff)
+  then ContinueGame (state, battleship, ai_status, diff, ai)
   else 
     let ai_result = 
       print_endline "AI Placement";
@@ -461,7 +467,7 @@ let rec place_player_ships_randomly state battleship ai_status diff player =
       | PGQuit -> (* impossible for AI to do *)
         failwith "illegal for AI"
       | PGContinue battleship' -> 
-        place_player_ships_randomly state battleship' ai_status diff player
+        place_player_ships_randomly state battleship' ai_status diff ai player
       | PGFinishTurn battleship' -> (* impossible for AI to do *)
         failwith "illegal for AI"
       | PGRandom -> (* impossible for AI to do *)
@@ -469,7 +475,7 @@ let rec place_player_ships_randomly state battleship ai_status diff player =
     end
 
 (* experiment place_player1_ships *)
-let rec place_player1_ships state battleship ai_status diff = 
+let rec place_player1_ships state battleship ai_status diff ai = 
   let () = print_remaining_ships true battleship in 
   let color = ANSITerminal.red in (* for player 1, use red *)
   ANSITerminal.(print_string [color] "type finish to end turn");
@@ -481,12 +487,12 @@ let rec place_player1_ships state battleship ai_status diff =
   match result_of_adding_ship with
   | PGQuit -> EndGame
   | PGContinue battleship' -> 
-    place_player1_ships state battleship' ai_status diff
+    place_player1_ships state battleship' ai_status diff ai
   | PGFinishTurn battleship' ->
     ANSITerminal.(print_string [green] "\nPass the computer to player 2.\n\n");
-    ContinueGame (state, battleship', ai_status, diff)
+    ContinueGame (state, battleship', ai_status, diff, ai)
   | PGRandom ->
-    place_player_ships_randomly state battleship ai_status diff true
+    place_player_ships_randomly state battleship ai_status diff ai true
 
 
 
@@ -518,7 +524,7 @@ let rec place_player1_ships state battleship ai_status diff =
 *)
 
 (* This is the Human player 2 manually placing ships *)
-let rec place_human_player2_ships state battleship ai_status diff = 
+let rec place_human_player2_ships state battleship ai_status diff ai = 
   let () = print_remaining_ships false battleship in 
   let color = ANSITerminal.blue in (* for player 2, use blue *)
   print_lay_down_ships_phase color;
@@ -529,18 +535,18 @@ let rec place_human_player2_ships state battleship ai_status diff =
     match result_of_adding_ship with
     | PGQuit -> EndGame
     | PGContinue battleship' -> 
-      place_human_player2_ships state battleship' ai_status diff
+      place_human_player2_ships state battleship' ai_status diff ai
     | PGFinishTurn battleship' ->
       ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
-      ContinueGame (state, battleship', ai_status, diff)
+      ContinueGame (state, battleship', ai_status, diff, ai)
     | PGRandom ->
-      place_player_ships_randomly state battleship ai_status diff false
+      place_player_ships_randomly state battleship ai_status diff ai false
   end
 
 (* experimental code place_player2_ships  *)
-let rec place_player2_ships state battleship ai_status diff = 
-  if ai_status then place_ai_player2_ships state battleship ai_status diff false
-  else place_human_player2_ships state battleship ai_status diff 
+let rec place_player2_ships state battleship ai_status diff ai = 
+  if ai_status then place_ai_player2_ships state battleship ai_status diff ai false
+  else place_human_player2_ships state battleship ai_status diff ai
 
 
 
@@ -587,6 +593,7 @@ let rec place_player2_ships state battleship ai_status diff =
 (* ########### Decide Whether to Move On or Not ############# *)
 
 (* DEPRECATED SECTION *)
+(*
 let print_change_phase_error () = 
   ANSITerminal.(print_string [green]
                   "You had an error in your command.\n")
@@ -595,15 +602,15 @@ let print_change_phase () =
   ANSITerminal.(print_string [green]
                   "Please enter yes or no to finish placing ships.\n")
 
-let rec change_phase_player1 state battleship ai_status diff = 
+let rec change_phase_player1 state battleship ai_status diff ai = 
   print_change_phase ();
   match () |> read_line |> parse with
   | YesNo true ->
-    ContinueGame (state, battleship, ai_status, diff)
+    ContinueGame (state, battleship, ai_status, diff, ai)
   | YesNo false -> 
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | Quit -> 
     print_change_phase_error ();  
     print_quit (); 
@@ -611,67 +618,62 @@ let rec change_phase_player1 state battleship ai_status diff =
   | InvalidCommand -> 
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | Valid _ -> 
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | Target _ -> 
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | Remove _ ->
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | FinishPlacement ->
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
   | Random ->
     print_change_phase_error ();
     print_change_phase (); 
-    change_phase_player1 state battleship ai_status diff
+    change_phase_player1 state battleship ai_status diff ai
 
-let change_phase_player2 state battleship ai_status diff = 
+let change_phase_player2 state battleship ai_status diff ai = 
   (* prevent blocking for AI ship placement *)
-  if ai_status then ContinueGame (state, battleship, ai_status, diff) 
-  else change_phase_player1 state battleship ai_status diff
+  if ai_status then ContinueGame (state, battleship, ai_status, diff, ai) 
+  else change_phase_player1 state battleship ai_status diff ai
+*)
 
 (* ########### Decide Whether to Move On or Not ############# *)
 
 (* ########### Entering Trageting Phase ############# *)
 
-let print_entering_targeting_phase state battleship ai_status diff = 
+let print_entering_targeting_phase state battleship ai_status diff ai = 
   ANSITerminal.(print_string [green]
                   "We are entering the targeting phase of the game.\n");
   ANSITerminal.(print_string [green]
                   "Player 1 will target first and alternate with player 2.\n");
   ANSITerminal.(print_string [green]
                   "The game continues until victory or a player quits. \n\n");              
-  ContinueGame (state, battleship, ai_status, diff)
+  ContinueGame (state, battleship, ai_status, diff, ai)
 
-let build_in_game_state state battleship ai_status diff = 
+let build_in_game_state state battleship ai_status diff ai = 
   if ai_status then 
     let in_game_state = 
       initialize_ai true false 
         (get_player_dict (choose_player true) battleship) 
         (get_player_dict (choose_player false) battleship) in 
-    ContinueGame (Some in_game_state, battleship, ai_status, diff)
+    ContinueGame (Some in_game_state, battleship, ai_status, diff, ai)
   else
     let in_game_state = 
       init_state true false 
         (get_player_dict (choose_player true) battleship) 
         (get_player_dict (choose_player false) battleship) in 
-    ContinueGame (Some in_game_state, battleship, ai_status, diff)
+    ContinueGame (Some in_game_state, battleship, ai_status, diff, ai)
 
 (* ########### Entering Trageting Phase ############# *)
-
-(* ########### Instantiate Hard AI ############# *)
-
-let hard_ai = initialize_hard_ai
-
-(* ########### Instantiate Hard AI ############# *)
 
 (* ########### In Game ############# *)
 
@@ -776,18 +778,28 @@ let get_difficulty_targeting_func diff =
   | AIMedium -> target_medium_ai
   | AIHard | AIInsane -> failwith "Unimplemented"
 
-let legal_target rec_func x y player state battleship ai_status diff = 
+let legal_target rec_func x y player state battleship ai_status diff ai = 
   let string_opp_player =
     match player with
     | true -> "Player 2"
     | false -> "Player 1"
   in 
+  (*if diff = AIHard && player = false then
+    if check_victory (bool_to_player player) state 
+    then let () = print_winner player ai_status in VictoryGame
+    else 
+      begin
+        delay ();
+        ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+        rec_func (Some (state |> update_player)) battleship ai_status diff ai
+      end
+    else*)
   match target_ship (x, y) (bool_to_player player) state with
   | State.Failure (new_state, CoordinateVisited) ->
     print_already_targeted (); 
-    rec_func (Some new_state) battleship ai_status diff
+    rec_func (Some new_state) battleship ai_status diff ai
   | State.Failure (new_state, OutOfBounds) ->
-    print_off_gameboard (); rec_func (Some new_state) battleship ai_status diff
+    print_off_gameboard (); rec_func (Some new_state) battleship ai_status diff ai
   | State.Success (new_state, ship_hit, ship_sunk) ->
     after_move_message ();
     print_boards_side_by_side player new_state;
@@ -800,10 +812,10 @@ let legal_target rec_func x y player state battleship ai_status diff =
       begin
         delay ();
         ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-        rec_func (Some (new_state |> update_player)) battleship ai_status diff
+        rec_func (Some (new_state |> update_player)) battleship ai_status diff ai
       end
 
-let rec target state_option battleship ai_status diff = 
+let rec target state_option battleship ai_status diff ai = 
   let state = get_state_from state_option in 
   let player = get_current_player state in
   let color = choose_color player in 
@@ -814,28 +826,33 @@ let rec target state_option battleship ai_status diff =
     print_player_grid player state;*)
   print_targeting_rules color;
   if player = false && ai_status then 
+    (*if diff = AIHard then
+      let ((x, y), new_ai, new_state) = target_hard_ai ai state in 
+      legal_target 
+        target (x - 1) (y - 1) player new_state battleship ai_status diff new_ai
+      else*)
     let targeting_func = get_difficulty_targeting_func diff in 
     let (x, y), new_state = targeting_func state in 
     legal_target 
-      target (x - 1) (y - 1) player new_state battleship ai_status diff
+      target (x - 1) (y - 1) player new_state battleship ai_status diff ai
   else begin
     match () |> read_line |> parse with
     | YesNo _ -> 
-      print_yes_no_phrase (); target (Some state) battleship ai_status diff
+      print_yes_no_phrase (); target (Some state) battleship ai_status diff ai
     | Quit -> 
       print_quit (); EndGame
     | InvalidCommand -> 
-      print_syntax_error (); target (Some state) battleship ai_status diff
+      print_syntax_error (); target (Some state) battleship ai_status diff ai
     | Valid (_, _, _, _) -> 
-      print_in_main_phase (); target (Some state) battleship ai_status diff
+      print_in_main_phase (); target (Some state) battleship ai_status diff ai
     | Target (x, y) -> 
-      legal_target target x y player state battleship ai_status diff
+      legal_target target x y player state battleship ai_status diff ai
     | Remove _ ->
-      print_in_main_phase (); target (Some state) battleship ai_status diff
+      print_in_main_phase (); target (Some state) battleship ai_status diff ai
     | FinishPlacement ->
-      print_in_main_phase (); target (Some state) battleship ai_status diff
+      print_in_main_phase (); target (Some state) battleship ai_status diff ai
     | Random ->
-      print_in_main_phase (); target (Some state) battleship ai_status diff
+      print_in_main_phase (); target (Some state) battleship ai_status diff ai
   end
 
 

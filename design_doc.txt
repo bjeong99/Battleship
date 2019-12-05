@@ -38,6 +38,12 @@ Main module:
   which starts the game
   COntaining: game printing data
 
+
+12/5 Changes to AI and State
+Hence, State will now only track changes that players make
+AI changes will all be kept in their own separate ai files
+There will be an easy AI file, medium AI file and hard AI file
+
 Hard AI
 
 The Hard AI works in this manner:

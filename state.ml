@@ -240,17 +240,17 @@ let rec print_pairs lst =
   | (x, y) :: t -> ("(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")") |> print_endline; print_pairs t
   | [] -> ()
 
-let update_targeted_locations ai_data target = 
+let update_targeted_locations ai_data target_loc = 
   let previously_targeted_locs = ai_data.pos_targeted in 
   let new_surround_pos = 
     ai_data.surrounding_positions 
-    |> (@) (get_surrounding_positions target ai_data)
+    |> (@) (get_surrounding_positions target_loc ai_data)
     |> List.sort_uniq 
       (fun (x1, y1) (x2, y2) -> 
          if x1 = x2 && y1 = y2 then 0 
          else if x1 > x2 then 1 
          else -1)
-    |> List.filter (fun elt -> elt <> target) 
+    |> List.filter (fun elt -> elt <> target_loc) 
     |> List.filter (fun elt -> not (List.mem elt previously_targeted_locs)) in 
   print_endline "These are the pairs of close locations";
   print_pairs new_surround_pos;
@@ -258,11 +258,12 @@ let update_targeted_locations ai_data target =
   print_pairs previously_targeted_locs;
   {
     ai_data with
-    pos_targeted = target :: (ai_data.pos_targeted);
+    pos_targeted = target_loc :: (ai_data.pos_targeted);
     pos_remaining = 
-      List.filter (fun elt -> elt <> target) (ai_data.pos_remaining);
+      List.filter (fun elt -> elt <> target_loc) (ai_data.pos_remaining);
     surrounding_positions = new_surround_pos;
   }
+(*|> target target_loc Player2 *)
 
 let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   current_player = player_1;
@@ -290,6 +291,35 @@ let target_medium_ai ai_data =
   let chosen_target = medium_choose_target ai_data.pos_remaining ai_data.surrounding_positions in 
   let ai_data' = update_targeted_locations ai_data chosen_target in 
   (chosen_target, ai_data')
+
+open Hard_ai
+let target_hard_ai ai state = 
+  if get_guess_phase ai 
+  then 
+    let (new_ai, chosen_target) = random_target ai in 
+    let new_state = update_targeted_locations state chosen_target in 
+    let hit_or_miss_status = get_player_guess chosen_target Player2 new_state in 
+    let ship_sunk = check_ship_sunk chosen_target Player2 new_state in 
+    if hit_or_miss_status 
+    then 
+      let smart_ai = random_to_smart new_ai chosen_target in 
+      (chosen_target, smart_ai, new_state)
+    else 
+      (chosen_target, new_ai, new_state)
+  else 
+    let (new_ai, chosen_target) = smart_target ai in 
+    let new_state = update_targeted_locations state chosen_target in 
+    let hit_or_miss_status = get_player_guess chosen_target Player2 new_state in 
+    let ship_sunk = check_ship_sunk chosen_target Player2 new_state in 
+    if ship_sunk 
+    then
+      let random_ai = smart_to_random new_ai true in 
+      (chosen_target, random_ai, new_state)
+    else 
+      let new_smart_ai = smart_update_neighbors new_ai chosen_target in 
+      (chosen_target, new_smart_ai, new_state)
+
+
 
 
 

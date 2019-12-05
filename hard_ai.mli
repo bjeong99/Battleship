@@ -14,6 +14,10 @@ type t = {
 (** [initialize_hard_ai] is a starting instance of a hard AI. *)
 val initialize_hard_ai : t
 
+(** [get_guess phase ai] is the targeting phase the [ai] is in, either
+    the random or smart phase. *)
+val get_guess_phase : t -> bool
+
 (** [random_guess_target ai] is a pair of the new ai, with random coordinate 
     targeted updated functionally, as well as the random coordinate itself.*)
 val random_target : t -> (t * point)
