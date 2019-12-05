@@ -225,7 +225,7 @@ let print_difficulty_message () =
 
 let print_difficulty_error () = 
   ANSITerminal.(print_string [green]
-                  "\n\nPlease Enter yes, no, or quit.\n")
+                  "\n\nPlease enter easy or medium.\n")
 
 type check_ai = 
   | AIContinue of bool
