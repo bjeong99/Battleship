@@ -353,10 +353,31 @@ let print_remaining_ships player battleship =
 
 type pregame_state = 
   | PGQuit
+  | PGRandom
   | PGFinishTurn of Battleship.t
   | PGContinue of Battleship.t
 
-let parse_single_ship battleship player str = 
+let place_player_ship battleship player x y direction ship =
+  let direction' = string_to_direction direction in 
+  let ship' = string_to_ship ship in 
+  let player' = choose_player player in
+  match insert_ship (x, y) direction' ship' player' battleship with
+  | Battleship.Success battleship' -> 
+    print_player_ship_board battleship' (choose_player player);
+    PGContinue battleship'
+  | Battleship.Failure (battleship', BoundsError) ->
+    print_off_gameboard ();
+    PGContinue battleship'
+  | Battleship.Failure (battleship', OccupiedTile) ->
+    print_occupied_location ();
+    PGContinue battleship'
+  | Battleship.Failure (battleship', OutOfShips) ->
+    print_placed_already ();
+    PGContinue battleship'
+  | Battleship.Failure (_, NonexistShip) ->
+    failwith "Remove Unimplemented"
+
+let parse_player_command battleship player str = 
   match parse str with
   | Quit -> print_quit (); PGQuit
   | YesNo _ -> print_yes_no_phrase (); PGContinue battleship
@@ -368,30 +389,75 @@ let parse_single_ship battleship player str =
     if Battleship.(remaining_ships (choose_player true) battleship) = 0 
     then PGFinishTurn (battleship)
     else PGContinue (battleship)
+  | Valid (x, y, direction, ship) -> 
+    place_player_ship battleship player x y direction ship
+  | Random -> PGRandom
+
+let ai_to_string ((x, y), direction, ship) = 
+  string_of_int (x) ^ "," ^ string_of_int (y) ^ "," ^ direction ^ "," ^ ship
+
+let rec place_single_ai_ship battleship player str = 
+  match parse str with
+  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement | Random-> 
+    failwith "Violates preconditions of place_single_ai_ship and place_ai_player2_ships"
   | Valid (x, y, direction, ship) -> begin
       let direction' = string_to_direction direction in 
       let ship' = string_to_ship ship in 
       let player' = choose_player player in
       match insert_ship (x, y) direction' ship' player' battleship with
       | Battleship.Success battleship' -> 
-        print_player_ship_board battleship' (choose_player player);
         PGContinue battleship'
       | Battleship.Failure (battleship', BoundsError) ->
-        print_off_gameboard ();
         PGContinue battleship'
       | Battleship.Failure (battleship', OccupiedTile) ->
-        print_occupied_location ();
         PGContinue battleship'
       | Battleship.Failure (battleship', OutOfShips) ->
-        print_placed_already ();
         PGContinue battleship'
       | Battleship.Failure (_, NonexistShip) ->
         failwith "Remove Unimplemented"
     end
 
-let ai_to_string ((x, y), direction, ship) = 
-  string_of_int (x) ^ "," ^ string_of_int (y) ^ "," ^ direction ^ "," ^ ship
+let rec place_ai_player2_ships state battleship ai_status diff player = 
+  if Battleship.(remaining_ships (choose_player player) battleship) = 0 
+  then ContinueGame (state, battleship, ai_status, diff)
+  else 
+    let ai_result = 
+      print_endline "AI Placement";
+      battleship 
+      |> randomly_laydown_ships 
+      |> ai_to_string 
+      |> place_single_ai_ship battleship false in begin
+      match ai_result with
+      | PGQuit -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+      | PGContinue battleship' -> 
+        place_ai_player2_ships state battleship' ai_status diff player
+      | PGFinishTurn battleship' -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+      | PGRandom -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+    end
 
+let rec place_player_ships_randomly state battleship ai_status diff player = 
+  if Battleship.(remaining_ships (choose_player player) battleship) = 0 
+  then ContinueGame (state, battleship, ai_status, diff)
+  else 
+    let ai_result = 
+      print_endline "AI Placement";
+      battleship 
+      |> random_ship (choose_player player)
+      |> ai_to_string 
+      |> place_single_ai_ship battleship player in begin
+      match ai_result with
+      | PGQuit -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+      | PGContinue battleship' -> 
+        place_player_ships_randomly state battleship' ai_status diff player
+      | PGFinishTurn battleship' -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+      | PGRandom -> (* impossible for AI to do *)
+        failwith "illegal for AI"
+    end
 
 (* experiment place_player1_ships *)
 let rec place_player1_ships state battleship ai_status diff = 
@@ -402,7 +468,7 @@ let rec place_player1_ships state battleship ai_status diff =
   let result_of_adding_ship = 
     () 
     |> read_line 
-    |> parse_single_ship battleship true in
+    |> parse_player_command battleship true in
   match result_of_adding_ship with
   | PGQuit -> EndGame
   | PGContinue battleship' -> 
@@ -410,6 +476,9 @@ let rec place_player1_ships state battleship ai_status diff =
   | PGFinishTurn battleship' ->
     ANSITerminal.(print_string [green] "\nPass the computer to player 2.\n\n");
     ContinueGame (state, battleship', ai_status, diff)
+  | PGRandom ->
+    place_player_ships_randomly state battleship ai_status diff true
+
 
 
 
@@ -439,48 +508,6 @@ let rec place_player1_ships state battleship ai_status diff =
   end
 *)
 
-let rec place_single_ai_ship battleship player str = 
-  match parse str with
-  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement -> 
-    failwith "Violates preconditions of place_single_ai_ship and place_ai_player2_ships"
-  | Valid (x, y, direction, ship) -> begin
-      let direction' = string_to_direction direction in 
-      let ship' = string_to_ship ship in 
-      let player' = choose_player player in
-      match insert_ship (x, y) direction' ship' player' battleship with
-      | Battleship.Success battleship' -> 
-        PGContinue battleship'
-      | Battleship.Failure (battleship', BoundsError) ->
-        PGContinue battleship'
-      | Battleship.Failure (battleship', OccupiedTile) ->
-        PGContinue battleship'
-      | Battleship.Failure (battleship', OutOfShips) ->
-        PGContinue battleship'
-      | Battleship.Failure (_, NonexistShip) ->
-        failwith "Remove Unimplemented"
-    end
-
-
-
-let rec place_ai_player2_ships state battleship ai_status diff = 
-  if Battleship.(remaining_ships (choose_player false) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff)
-  else 
-    let ai_result = 
-      print_endline "AI PLacement";
-      battleship 
-      |> randomly_laydown_ships 
-      |> ai_to_string 
-      |> place_single_ai_ship battleship false in begin
-      match ai_result with
-      | PGQuit -> (* impossible for AI to do *)
-        failwith "illegal for AI"
-      | PGContinue battleship' -> 
-        place_ai_player2_ships state battleship' ai_status diff
-      | PGFinishTurn battleship' -> (* impossible for AI to do *)
-        failwith "illegal for AI"
-    end
-
 (* This is the Human player 2 manually placing ships *)
 let rec place_human_player2_ships state battleship ai_status diff = 
   let () = print_remaining_ships false battleship in 
@@ -489,7 +516,7 @@ let rec place_human_player2_ships state battleship ai_status diff =
   let result_of_adding_ship = 
     () 
     |> read_line 
-    |> parse_single_ship battleship false in begin
+    |> parse_player_command battleship false in begin
     match result_of_adding_ship with
     | PGQuit -> EndGame
     | PGContinue battleship' -> 
@@ -497,12 +524,14 @@ let rec place_human_player2_ships state battleship ai_status diff =
     | PGFinishTurn battleship' ->
       ANSITerminal.(print_string [green] "\nPass the computer to player 1.\n\n");
       ContinueGame (state, battleship', ai_status, diff)
+    | PGRandom ->
+      place_player_ships_randomly state battleship ai_status diff false
   end
 
 (* experimental code place_player2_ships  *)
 let rec place_player2_ships state battleship ai_status diff = 
-  if ai_status then place_ai_player2_ships state battleship ai_status diff
-  else place_human_player2_ships state battleship ai_status diff
+  if ai_status then place_ai_player2_ships state battleship ai_status diff false
+  else place_human_player2_ships state battleship ai_status diff 
 
 
 
@@ -548,6 +577,7 @@ let rec place_player2_ships state battleship ai_status diff =
 
 (* ########### Decide Whether to Move On or Not ############# *)
 
+(* DEPRECATED SECTION *)
 let print_change_phase_error () = 
   ANSITerminal.(print_string [green]
                   "You had an error in your command.\n")
@@ -586,6 +616,10 @@ let rec change_phase_player1 state battleship ai_status diff =
     print_change_phase (); 
     change_phase_player1 state battleship ai_status diff
   | FinishPlacement ->
+    print_change_phase_error ();
+    print_change_phase (); 
+    change_phase_player1 state battleship ai_status diff
+  | Random ->
     print_change_phase_error ();
     print_change_phase (); 
     change_phase_player1 state battleship ai_status diff
@@ -783,6 +817,8 @@ let rec target state_option battleship ai_status diff =
     | Remove _ ->
       print_in_main_phase (); target (Some state) battleship ai_status diff
     | FinishPlacement ->
+      print_in_main_phase (); target (Some state) battleship ai_status diff
+    | Random ->
       print_in_main_phase (); target (Some state) battleship ai_status diff
   end
 

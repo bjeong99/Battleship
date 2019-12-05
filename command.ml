@@ -6,6 +6,7 @@ type command =
   | YesNo of bool
   | Remove of string
   | FinishPlacement
+  | Random
   (*| Ingame of int * int * string * string*)
 
 let c_TARGET = "target"
@@ -110,6 +111,7 @@ let process_string s =
 
 let c_REMOVE = "remove"
 let c_FINISH = "finish"
+let c_RANDOM = "random"
 
 let parse_elements str_lst = 
   match str_lst with
@@ -136,9 +138,11 @@ let parse_elements str_lst =
        process_ship_name ship 
     then Remove (ship)
     else InvalidCommand
-  | finish :: [] ->
-    if finish = c_FINISH 
+  | single_word_command :: [] ->
+    if single_word_command = c_FINISH 
     then FinishPlacement
+    else if single_word_command = c_RANDOM 
+    then Random
     else InvalidCommand
   | _ -> InvalidCommand
 

@@ -395,7 +395,9 @@ let choose_target pairs_list =
   let () = Random.self_init () in 
   pairs_list 
   |> List.length 
+  |> (fun len -> print_endline "Length of pairs"; len |> string_of_int |> print_endline; len)
   |> Random.int 
+  |> (fun i -> print_endline "Random integer"; i |> string_of_int |> print_endline; i)
   (*|> (fun l -> l - 1) *)
   |> List.nth pairs_list
 
@@ -425,12 +427,17 @@ let ship_type_to_ship_name ship =
     a random direction for the indicated [player].
     THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
     AT THAT LOCATION, for example due to another ship
-    in the way, or going off the board. *)
+    in the way, or going off the board.
+
+    Requires: The player has at least one ship remaining to place on 
+    the board. *)
 let randomly_laydown_ships_helper player game = 
   match player with
   | Player1 ->
     let () = Random.self_init () in 
     let remaining_ships_num = List.length game.player_1_ships_remaining in 
+    print_endline "Remaining ships to place Player 1";
+    remaining_ships_num |> string_of_int |> print_endline;
     let random_ship = List.nth (game.player_1_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
     let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
     let pairs_list = create_pairs c_ROWS c_COLS in 
@@ -451,7 +458,10 @@ let randomly_laydown_ships_helper player game =
     in a random location. 
     THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
     AT THAT LOCATION, for example due to another ship
-    in the way, or going off the board.*)
+    in the way, or going off the board.
+
+    Requires: The player has at least one ship remaining to place on 
+    the board.*)
 let random_ship player game = 
   randomly_laydown_ships_helper player game
 
@@ -460,6 +470,9 @@ let random_ship player game =
     location, in a random direction. 
     THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
     AT THAT LOCATION, for example due to another ship
-    in the way, or going off the board.*)
+    in the way, or going off the board.
+
+    Requires: The player has at least one ship remaining to place on 
+    the board.*)
 let randomly_laydown_ships game = 
   randomly_laydown_ships_helper Player2 game

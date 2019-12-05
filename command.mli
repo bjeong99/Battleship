@@ -6,6 +6,7 @@ type command =
   | YesNo of bool
   | Remove of string
   | FinishPlacement
+  | Random
 
 type difficulty = 
   | Easy
