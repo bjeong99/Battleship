@@ -33,7 +33,6 @@ type t = {
   pos_targeted : (int * int) list;
   pos_remaining : (int * int) list;
   surrounding_positions : (int * int) list;
-  current_positions : (int * int) list;
   guess_phase : bool;
 }
 
