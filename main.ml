@@ -776,7 +776,8 @@ let get_difficulty_targeting_func diff =
   match diff with
   | AIEasy -> target_ai
   | AIMedium -> target_medium_ai
-  | AIHard | AIInsane -> failwith "Unimplemented"
+  | AIHard -> target_hard_ai
+  | AIInsane -> failwith "Unimplemented"
 
 let legal_target rec_func x y player state battleship ai_status diff ai = 
   let string_opp_player =
@@ -809,11 +810,18 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
     if check_victory (bool_to_player player) new_state 
     then let () = print_winner player ai_status in VictoryGame
     else 
+    if player = false && diff = AIHard then begin
+      delay ();
+      ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+      rec_func (Some (update_hard_ai new_state ship_hit ship_sunk (x, y) |> update_player)) battleship ai_status diff ai
+    end
+    else
       begin
         delay ();
         ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
         rec_func (Some (new_state |> update_player)) battleship ai_status diff ai
       end
+
 
 let rec target state_option battleship ai_status diff ai = 
   let state = get_state_from state_option in 

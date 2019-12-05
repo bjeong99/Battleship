@@ -37,5 +37,6 @@ val initialize_ai : bool -> bool -> Battleship.list_t -> Battleship.list_t -> t
 val target_ai : t -> ((int * int) * t)
 
 val target_medium_ai : t -> ((int * int) * t)
-val target_hard_ai : Hard_ai.t -> t -> Hard_ai.point * Hard_ai.t * t
+val target_hard_ai : t -> Hard_ai.point * t
+val update_hard_ai : t -> bool -> bool -> Hard_ai.point -> t
 

@@ -1,3 +1,5 @@
+open Hard_ai
+
 let c_ROWS = 10
 let c_COLS = 10
 
@@ -34,6 +36,7 @@ type t = {
   pos_remaining : (int * int) list;
   surrounding_positions : (int * int) list;
   guess_phase : bool;
+  hard_ai : Hard_ai.t
 }
 
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
@@ -47,6 +50,7 @@ let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   pos_remaining = [];
   surrounding_positions = [];
   guess_phase = true;
+  hard_ai = initialize_hard_ai;
 }
 
 let update_player state = 
@@ -276,6 +280,7 @@ let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   pos_remaining = create_pairs c_ROWS c_COLS;
   surrounding_positions = [];
   guess_phase = true;
+  hard_ai = initialize_hard_ai;
 }
 
 let target_ai ai_data = 
@@ -292,32 +297,39 @@ let target_medium_ai ai_data =
   let ai_data' = update_targeted_locations ai_data chosen_target in 
   (chosen_target, ai_data')
 
-open Hard_ai
-let target_hard_ai ai state = 
+
+let target_hard_ai state = 
+  let ai = state.hard_ai in 
   if get_guess_phase ai 
   then 
     let (new_ai, chosen_target) = random_target ai in 
     let new_state = update_targeted_locations state chosen_target in 
-    let hit_or_miss_status = get_player_guess chosen_target Player2 new_state in 
-    let ship_sunk = check_ship_sunk chosen_target Player2 new_state in 
-    if hit_or_miss_status 
-    then 
-      let smart_ai = random_to_smart new_ai chosen_target in 
-      (chosen_target, smart_ai, new_state)
-    else 
-      (chosen_target, new_ai, new_state)
+    (chosen_target, new_state)
   else 
     let (new_ai, chosen_target) = smart_target ai in 
     let new_state = update_targeted_locations state chosen_target in 
-    let hit_or_miss_status = get_player_guess chosen_target Player2 new_state in 
-    let ship_sunk = check_ship_sunk chosen_target Player2 new_state in 
-    if ship_sunk 
-    then
-      let random_ai = smart_to_random new_ai true in 
-      (chosen_target, random_ai, new_state)
+    (chosen_target, new_state)
+
+let update_hard_ai state ship_hit ship_sunk target_coord = 
+  let ai = state.hard_ai in 
+  if get_guess_phase ai 
+  then begin
+    if ship_hit 
+    then 
+      let smart_ai = random_to_smart ai target_coord in
+      {state with hard_ai = smart_ai}
     else 
-      let new_smart_ai = smart_update_neighbors new_ai chosen_target in 
-      (chosen_target, new_smart_ai, new_state)
+      state
+  end
+  else begin
+    if ship_sunk
+    then 
+      let random_ai = smart_to_random ai true in 
+      {state with hard_ai = random_ai}
+    else 
+      let new_smart_ai = smart_update_neighbors ai target_coord in 
+      {state with hard_ai = new_smart_ai}
+  end
 
 
 
