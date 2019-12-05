@@ -3,6 +3,15 @@ open State
 open Battleship
 open Command
 
+(*
+For running quick tests
+1, 1, down, aircraftcarrier
+2,2 ,down, battleship
+3,3, down, cruiser
+4, 4, down, destroyer
+5, 5, down, submarine
+ *)
+
 let state_tests = [
 ]
 
