@@ -33,6 +33,8 @@ type t = {
   pos_targeted : (int * int) list;
   pos_remaining : (int * int) list;
   surrounding_positions : (int * int) list;
+  current_positions : (int * int) list;
+  guess_phase : bool;
 }
 
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
@@ -45,6 +47,7 @@ let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   pos_targeted = [];
   pos_remaining = [];
   surrounding_positions = [];
+  guess_phase = true;
 }
 
 let update_player state = 
@@ -272,6 +275,7 @@ let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   pos_targeted = [];
   pos_remaining = create_pairs c_ROWS c_COLS;
   surrounding_positions = [];
+  guess_phase = true;
 }
 
 let target_ai ai_data = 

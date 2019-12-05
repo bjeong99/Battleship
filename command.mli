@@ -1,4 +1,4 @@
-(* [command] represents what a player could type in during
+(**[command] represents what a player could type in during
    the laying down ships phase, as well as the targeting phase 
 
    Quit : represents a command to end the game. 
@@ -35,7 +35,7 @@ type command =
   | FinishPlacement
   | Random
 
-(** [difficulty represents the difficulty of the AI, which is always player 2. 
+(** [difficulty] represents the difficulty of the AI, which is always player 2. 
     [Easy] is an AI that always guesses randomly. 
     [Medium] is an AI that guesses randomly until it finds a ship,
     then targets around that ship. 

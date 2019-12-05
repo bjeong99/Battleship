@@ -43,7 +43,6 @@ let rec string_to_char acc s =
   | c -> string_to_char (c :: acc) (String.sub s 1 (String.length s - 1)) 
   | exception (Invalid_argument _) -> List.rev acc
 
-
 (* START CITATION:
    https://stackoverflow.com/questions/49184057/
    does-ocaml-have-a-module-that-is-like-isdigit-and-isalpha-in-c-c 
@@ -224,7 +223,7 @@ let clean_str str =
 let parse str = 
   str |> clean_str |> cleaned_to_command
 
-(** [difficulty represents the difficulty of the AI, which is always player 2. 
+(** [difficulty] represents the difficulty of the AI, which is always player 2. 
     [Easy] is an AI that always guesses randomly. 
     [Medium] is an AI that guesses randomly until it finds a ship,
     then targets around that ship. 
