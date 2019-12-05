@@ -163,6 +163,7 @@ let () =
 open Command
 open Battleship
 open State
+open Hard_ai
 
 (* ############ Opening All Modules needed ############# *)
 
@@ -178,6 +179,8 @@ let print_welcome_message () =
 type ai_difficulty = 
   | AIEasy
   | AIMedium
+  | AIHard
+  | AIInsane
 
 (* ########### MONADS ############# *)
 (* MONAD in order to simplify code *)
@@ -250,7 +253,8 @@ let rec choose_difficulty () =
   match () |> read_line |> parse_difficulty with
   | Easy -> AIEasy
   | Medium -> AIMedium
-  | Hard | Insane -> failwith "Unimplemented"
+  | Hard -> AIHard
+  | Insane -> failwith "Unimplemented"
   | InvalidDifficulty -> 
     print_difficulty_error (); choose_difficulty ()
 
@@ -266,6 +270,10 @@ let determine_ai_difficulty state battleship ai_status diff =
       ContinueGame (state, battleship, ai_status, AIEasy)
     | AIMedium -> ANSITerminal.erase Screen;
       ContinueGame (state, battleship, ai_status, AIMedium)
+    | AIHard -> ANSITerminal.erase Screen;
+      ContinueGame (state, battleship, ai_status, AIHard)
+    | AIInsane -> 
+      failwith "unimplemented"
   end
 
 (* ########### Process AI ############# *)
@@ -659,6 +667,12 @@ let build_in_game_state state battleship ai_status diff =
 
 (* ########### Entering Trageting Phase ############# *)
 
+(* ########### Instantiate Hard AI ############# *)
+
+let hard_ai = initialize_hard_ai
+
+(* ########### Instantiate Hard AI ############# *)
+
 (* ########### In Game ############# *)
 
 let print_player_move_message player = 
@@ -756,10 +770,11 @@ let choose_color player =
   if player then ANSITerminal.red 
   else ANSITerminal.blue
 
-let get_dfficulty_targeting_func diff = 
+let get_difficulty_targeting_func diff = 
   match diff with
   | AIEasy -> target_ai
   | AIMedium -> target_medium_ai
+  | AIHard | AIInsane -> failwith "Unimplemented"
 
 let legal_target rec_func x y player state battleship ai_status diff = 
   let string_opp_player =
@@ -799,7 +814,7 @@ let rec target state_option battleship ai_status diff =
     print_player_grid player state;*)
   print_targeting_rules color;
   if player = false && ai_status then 
-    let targeting_func = get_dfficulty_targeting_func diff in 
+    let targeting_func = get_difficulty_targeting_func diff in 
     let (x, y), new_state = targeting_func state in 
     legal_target 
       target (x - 1) (y - 1) player new_state battleship ai_status diff
@@ -848,22 +863,22 @@ let finish_game game_status =
 
 let () = 
   ()
-  |> fun () -> ANSITerminal.resize 125 25
-               |> fun () -> ANSITerminal.erase Screen
-                            |> print_welcome_message 
-                            |> initialize_main 
-                            |> (>>>) determine_ai_status
-                            |> (>>>) determine_ai_difficulty
-                            |> (>>>) print_player1_add_ships
-                            |> (>>>) place_player1_ships 
-                            (*|> (>>>) change_phase_player1*)
-                            |> (>>>) print_player2_add_ships
-                            |> (>>>) place_player2_ships
-                            (*|> (>>>) change_phase_player2*)
-                            |> (>>>) print_entering_targeting_phase 
-                            |> (>>>) build_in_game_state
-                            |> (>>>) target
-                            |> finish_game
+  |> (fun () -> ANSITerminal.resize 125 25)
+  |> (fun () -> ANSITerminal.erase Screen)
+  |> print_welcome_message 
+  |> initialize_main 
+  |> (>>>) determine_ai_status
+  |> (>>>) determine_ai_difficulty
+  |> (>>>) print_player1_add_ships
+  |> (>>>) place_player1_ships 
+  (*|> (>>>) change_phase_player1*)
+  |> (>>>) print_player2_add_ships
+  |> (>>>) place_player2_ships
+  (*|> (>>>) change_phase_player2*)
+  |> (>>>) print_entering_targeting_phase 
+  |> (>>>) build_in_game_state
+  |> (>>>) target
+  |> finish_game
 
 (* ########### Running Game ############# *)
 

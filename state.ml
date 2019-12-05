@@ -295,7 +295,6 @@ let target_medium_ai ai_data =
 
 
 
-
      (*
      let init_state bs1 bs2 = 
      let empty_grid = empty_board in 

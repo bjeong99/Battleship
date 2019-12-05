@@ -32,7 +32,7 @@ val smart_target : t -> (t * point)
 (** [smart_update_neighbors ai p] is the new ai with 
     additional coordinates to target.
     Requires: can only use when a ship has been hit and not sunk yet. *)
-val smart_hit_ship : t -> point -> t
+val smart_update_neighbors : t -> point -> t
 
 (** [smart_to_random ai b] is the new ai in the random phase.
     Requires: A ship that was being targeted was just sunk.*)

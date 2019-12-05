@@ -108,7 +108,7 @@ let add_vertical_neighbors ai =
   let vert_neighbors = find_neighboring_vert current_location ai in 
   {ai with vertical_points = ai.vertical_points @ vert_neighbors}
 
-let smart_update_neighbors coord ai = 
+let smart_update_neighbors ai coord = 
   if ai.horizontal_points = [] 
   then ai |> change_to_vertical |> add_vertical_neighbors
   else ai |> add_horizontal_neighbors

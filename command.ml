@@ -243,6 +243,7 @@ type difficulty =
 let check_difficulty str = 
   if str = c_EASY then Easy
   else if str = c_MEDIUM then Medium
+  else if str = c_HARD then Hard
   else InvalidDifficulty
 
 (** [parse_difficulty str] is the [difficulty] corresponding to [str]. *)

@@ -2,6 +2,7 @@
 #require "ANSITerminal";;
 #require "emoji";;
 #directory "_build";;
+#load "hard_ai.cmo";;
 #load "battleship.cmo";;
 #load "command.cmo";;
 #load "state.cmo";;
