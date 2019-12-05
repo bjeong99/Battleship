@@ -207,57 +207,6 @@ let cleaned_to_command str_lst =
     parse_single_word word
   | _ -> InvalidCommand
 
-(*
-let parse_elements str_lst = 
-  match str_lst with
-  | x :: y :: direction :: ship :: [] ->
-    let x_digit = char_to_coord x in 
-    if process_number x_digit && 
-       process_number y && 
-       process_string direction && 
-       process_string ship &&
-       process_direction direction &&
-       process_ship_name ship 
-    then Valid (int_of_string x_digit - 1, int_of_string y - 1, direction, ship)
-    else InvalidCommand
-  | target :: x :: y :: [] ->
-    let x_digit = char_to_coord x in
-    if process_number x_digit && 
-       process_number y &&
-       target = c_TARGET
-    then Target (int_of_string x_digit - 1, int_of_string y - 1)
-    else InvalidCommand
-  | remove :: ship :: [] ->
-    if remove = c_REMOVE &&
-       process_string ship &&
-       process_ship_name ship 
-    then Remove (ship)
-    else InvalidCommand
-  | single_word_command :: [] ->
-    if single_word_command = c_FINISH 
-    then FinishPlacement
-    else if single_word_command = c_RANDOM 
-    then Random
-    else InvalidCommand
-  | _ -> InvalidCommand
-
-
-
-let parse_quit str = 
-  if str = c_QUIT then Quit 
-  else 
-    str 
-    |> String.split_on_char ','
-    |> List.map String.trim
-    |> List.filter (fun elt -> elt <> "")
-    |> parse_elements
-
-let parse_affirmative str = 
-  if str = c_YES then YesNo true
-  else if str = c_NO then YesNo false
-  else parse_quit str
-*)
-
 (** [clean_str str] is [str] 
     with leading and trailing spaces removed, and
     turned lowercase and 
@@ -275,31 +224,31 @@ let clean_str str =
 let parse str = 
   str |> clean_str |> cleaned_to_command
 
-(* old parse
-   let parse str = 
-   str 
-   |> String.lowercase_ascii
-   |> String.trim
-   |> String.split_on_char ','
-   |> List.map String.trim
-   |> List.filter (fun elt -> elt <> "")
-   |> parse_cleaned
-*)
-
+(** [difficulty represents the difficulty of the AI, which is always player 2. 
+    [Easy] is an AI that always guesses randomly. 
+    [Medium] is an AI that guesses randomly until it finds a ship,
+    then targets around that ship. 
+    [Hard] is an improved [Medium] that minimizes the number of shots
+      by choosing a direction to target. 
+    [Insane] is an algorithm by so and so... 
+    [InvalidDifficulty] is an invalid command for a difficulty. *)
 type difficulty = 
   | Easy
   | Medium
+  | Hard
+  | Insane
   | InvalidDifficulty
 
+(** [check_difficulty str] is what [difficulty] [str] 
+    corresponds to.  *)
 let check_difficulty str = 
-  if str  = c_EASY then Easy
+  if str = c_EASY then Easy
   else if str = c_MEDIUM then Medium
   else InvalidDifficulty
 
+(** [parse_difficulty str] is the [difficulty] corresponding to [str]. *)
 let parse_difficulty str = 
   str 
   |> String.lowercase_ascii
   |> String.trim
   |> check_difficulty
-
-

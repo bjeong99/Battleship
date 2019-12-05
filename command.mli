@@ -1,3 +1,30 @@
+(* [command] represents what a player could type in during
+   the laying down ships phase, as well as the targeting phase 
+
+   Quit : represents a command to end the game. 
+   InvalidCommand : a malformed command not part of the game. 
+   Valid x y direction ship : a command to lay down a ship at coordinate
+    (x, y) in direction [direction] with ship [ship].
+    Does not guarantee that the ship can actually be laid down at 
+    that location (x, y).
+
+   Target (x, y) : represents a player targeting a location (x, y)
+    on the enemy board. Does not guarantee that (x, y) can actually
+    be targeted.
+
+   YesNo b : represents affirmative if [b] is [true], [false] otherwise. 
+   Remove s : represents removing a ship [s] from the board. Does not guarantee
+    that the ship [s] can actually be removed. 
+
+   FinishPlacement : represents a command to finish the laying down ships
+    phase. Does not guarantee that the command will be carried out. 
+
+   Random : represents a command to finish laying down the remainder of the
+    ships for that player automatically, using computer randomly generated
+    coordinates. 
+
+   NOTE: A valid command refers not to [Valid] but to any command that is not
+    [Invalid]*)
 type command = 
   | Quit
   | InvalidCommand
@@ -8,80 +35,23 @@ type command =
   | FinishPlacement
   | Random
 
+(** [difficulty represents the difficulty of the AI, which is always player 2. 
+    [Easy] is an AI that always guesses randomly. 
+    [Medium] is an AI that guesses randomly until it finds a ship,
+    then targets around that ship. 
+    [Hard] is an improved [Medium] that minimizes the number of shots
+      by choosing a direction to target. 
+    [Insane] is an algorithm by so and so... 
+    [InvalidDifficulty] is an invalid command for a difficulty. *)
 type difficulty = 
   | Easy
   | Medium
+  | Hard
+  | Insane
   | InvalidDifficulty
 
+(** [parse str] is the [command] [str] corresponds to. *)
 val parse : string -> command
 
+(** [parse_difficulty str] is the [difficulty] corresponding to [str]. *)
 val parse_difficulty : string -> difficulty
-
-(*
-type ship_type = 
-  | Battleship
-  | AircraftCarrier
-  | Destroyer
-  | Cruiser
-  | Submarine
-
-type command = 
-  | Pregame of int * int * ship_type
-  | Ingame of int * int
-  | Quit
-*)
-
-(*
-  (**
-   Parsing of player commands.
- *)
-
-  (** The type [object_phrase] represents the object phrase that can be part of a 
-    player command.  Each element of the list represents a word of the object 
-    phrase, where a {i word} is defined as a consecutive sequence of non-space 
-    characters.  Thus, no element of the list should contain any leading,
-    internal, or trailing spaces.  The list is in the same order as the words 
-    in the original player command.  For example:
-  - If the player command is ["fire 3 5"], then the object phrase is 
-      [["3"; "5"]].
-  - If the player command is ["go 3     5"], then the object phrase is
-      again [["3"; "5"]]. 
-
-    An [object_phrase] is not permitted to be the empty list. *)
-  type object_phrase = string list
-
-  (** The type [command] represents a player command that is decomposed
-    into a verb and possibly an object phrase. *)
-  type command = 
-  | Fire of object_phrase
-  | Place of object_phrase
-  | Remove of object_phrase
-  | Inventory
-  | Remaining of object_phrase
-  | Finished
-  | Quit
-
-  (** Raised when an empty command is parsed. *)
-  exception Empty
-
-  (** Raised when a malformed command is encountered. *)
-  exception Malformed
-
-  (** [parse str] parses a player's input into a [command], as follows. The first
-    word (i.e., consecutive sequence of non-space characters) of [str] becomes 
-    the verb. The rest of the words, if any, become the object phrase.
-    Examples: 
-  - [parse "    fire   3   5   "] is [Fire ["3"; "5"]]
-  - [parse "quit"] is [Quit]. 
-
-    Requires: [str] contains only alphanumeric (A-Z, a-z, 0-9) and space 
-    characters (only ASCII character code 32; not tabs or newlines, etc.).
-
-    Raises: [Empty] if [str] is the empty string or contains only spaces. 
-
-    Raises: [Malformed] if the command is malformed. A command
-    is {i malformed} if the verb does not exist,
-    or if the verb requiring an object phrase is empty or if a the very without
-    an object phrase has an object phrase. *)
-  val parse : string -> command
-  *)

@@ -250,6 +250,7 @@ let rec choose_difficulty () =
   match () |> read_line |> parse_difficulty with
   | Easy -> AIEasy
   | Medium -> AIMedium
+  | Hard | Insane -> failwith "Unimplemented"
   | InvalidDifficulty -> 
     print_difficulty_error (); choose_difficulty ()
 
