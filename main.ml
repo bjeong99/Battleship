@@ -403,7 +403,7 @@ let parse_player_command battleship player str =
   | Random -> PGRandom
 
 let ai_to_string ((x, y), direction, ship) = 
-  string_of_int (x) ^ "," ^ string_of_int (y) ^ "," ^ direction ^ "," ^ ship
+  string_of_int (x) ^ " " ^ string_of_int (y) ^ " " ^ direction ^ " " ^ ship
 
 let rec place_single_ai_ship battleship player str = 
   match parse str with
