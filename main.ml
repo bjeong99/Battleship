@@ -813,7 +813,7 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
     if player = false && diff = AIHard then begin
       delay ();
       ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-      rec_func (Some (update_hard_ai new_state ship_hit ship_sunk (x, y) |> update_player)) battleship ai_status diff ai
+      rec_func (Some (update_hard_ai new_state ship_hit ship_sunk (x + 1, y + 1) |> update_player)) battleship ai_status diff ai
     end
     else
       begin

@@ -185,15 +185,12 @@ let parse_remove remove ship =
     [Quit] if [word] is the quit string
     else [InvalidCommand]. *)
 let parse_single_word word = 
-  print_endline "this is word";
-  print_endline word;
-  print_endline c_RANDOM;
   if word = c_FINISH then FinishPlacement
   else if word = c_RANDOM then Random
   else if word = c_YES then YesNo true
   else if word = c_NO then YesNo false
   else if word = c_QUIT then Quit
-  else let () = print_endline "Invalid"; in InvalidCommand
+  else InvalidCommand
 
 (** [cleaned_to_command str_lst] will parse [str_lst] into
     a valid command or an [InvalidCommand] *)

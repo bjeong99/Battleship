@@ -302,13 +302,13 @@ let target_hard_ai state =
   let ai = state.hard_ai in 
   if get_guess_phase ai 
   then 
-    let (new_ai, chosen_target) = random_target ai in 
+    let (chosen_target, new_ai) = random_target ai in 
     let new_state = update_targeted_locations state chosen_target in 
-    (chosen_target, new_state)
+    (chosen_target, {new_state with hard_ai = new_ai})
   else 
-    let (new_ai, chosen_target) = smart_target ai in 
+    let (chosen_target, new_ai) = smart_target ai in 
     let new_state = update_targeted_locations state chosen_target in 
-    (chosen_target, new_state)
+    (chosen_target, {new_state with hard_ai = new_ai})
 
 let update_hard_ai state ship_hit ship_sunk target_coord = 
   let ai = state.hard_ai in 
@@ -316,25 +316,23 @@ let update_hard_ai state ship_hit ship_sunk target_coord =
   then begin
     if ship_hit 
     then 
-      let smart_ai = random_to_smart ai target_coord in
+      let smart_ai = (ai |> random_to_smart |> update_smart_ai_after_hit) target_coord in
       {state with hard_ai = smart_ai}
     else 
       state
   end
   else begin
-    if ship_sunk
-    then 
-      let random_ai = smart_to_random ai true in 
+    if ship_hit && ship_sunk then 
+      let random_ai = smart_to_random ai in 
       {state with hard_ai = random_ai}
-    else 
-      let new_smart_ai = smart_update_neighbors ai target_coord in 
+    else if ship_hit && (not ship_sunk) then 
+      state
+    else if (not ship_hit) && (not ship_sunk) then 
+      let new_smart_ai = update_smart_after_miss ai in 
       {state with hard_ai = new_smart_ai}
+    else 
+      failwith "A target cannot sink a ship, yet not hit a ship"
   end
-
-
-
-
-
 
 
      (*
