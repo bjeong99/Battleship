@@ -230,11 +230,11 @@ let print_difficulty_message () =
   ANSITerminal.(print_string [green]
                   "\n\nPlease choose whether the difficulty of the AI.\n");
   ANSITerminal.(print_string [green]
-                  "You can choose easy, medium or hard.\n")
+                  "You can choose easy, medium, hard or insane.\n")
 
 let print_difficulty_error () = 
   ANSITerminal.(print_string [green]
-                  "\n\nPlease enter easy, medium or hard.\n")
+                  "\n\nPlease enter easy, medium, hard or insane.\n")
 
 type check_ai = 
   | AIContinue of bool
@@ -260,7 +260,7 @@ let rec choose_difficulty () =
   | Easy -> AIEasy
   | Medium -> AIMedium
   | Hard -> AIHard
-  | Insane -> failwith "Unimplemented"
+  | Insane -> AIInsane
   | InvalidDifficulty -> 
     print_difficulty_error (); choose_difficulty ()
 
@@ -279,7 +279,7 @@ let determine_ai_difficulty state battleship ai_status diff ai =
     | AIHard -> ANSITerminal.erase Screen;
       ContinueGame (state, battleship, ai_status, AIHard, ai)
     | AIInsane -> 
-      failwith "unimplemented"
+      ContinueGame (state, battleship, ai_status, AIInsane, ai)
   end
 
 (* ########### Process AI ############# *)
@@ -777,7 +777,7 @@ let get_difficulty_targeting_func diff =
   | AIEasy -> target_ai
   | AIMedium -> target_medium_ai
   | AIHard -> target_hard_ai
-  | AIInsane -> failwith "Unimplemented"
+  | AIInsane -> target_insane_ai
 
 let legal_target rec_func x y player state battleship ai_status diff ai = 
   let string_opp_player =
@@ -813,7 +813,12 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
     if player = false && diff = AIHard then begin
       delay ();
       ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-      rec_func (Some (update_hard_ai new_state ship_hit ship_sunk (x, y) |> update_player)) battleship ai_status diff ai
+      rec_func (Some (update_hard_ai new_state ship_hit ship_sunk (x + 1, y + 1) |> update_player)) battleship ai_status diff ai
+    end
+    else if player = false && diff = AIInsane then begin
+      delay ();
+      ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+      rec_func (Some (update_insane_ai new_state ship_hit ship_sunk (x + 1, y + 1) |> update_player)) battleship ai_status diff ai
     end
     else
       begin
