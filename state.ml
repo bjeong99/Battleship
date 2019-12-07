@@ -321,6 +321,12 @@ let update_hard_ai state ship_hit ship_sunk target_coord =
     else 
       state
   end
+  else if all_bounds_or_all_lists ai
+  then begin
+    let random_ai = smart_to_random ai in 
+    {state with hard_ai = random_ai}
+  end
+  (* TODO integrate all lists or bounds in this case *)
   else begin
     if ship_hit && ship_sunk then 
       let random_ai = smart_to_random ai in 
@@ -333,6 +339,50 @@ let update_hard_ai state ship_hit ship_sunk target_coord =
     else 
       failwith "A target cannot sink a ship, yet not hit a ship"
   end
+
+let target_insane_ai state = 
+  let ai = state.hard_ai in 
+  if get_insane_phase ai 
+  then 
+    let (chosen_target, new_ai) = insane_target ai in 
+    let new_state = update_targeted_locations state chosen_target in 
+    (chosen_target, {new_state with hard_ai = new_ai})
+  else 
+    let (chosen_target, new_ai) = smart_target ai in 
+    let new_state = update_targeted_locations state chosen_target in 
+    (chosen_target, {new_state with hard_ai = new_ai})
+
+let update_insane_ai state ship_hit ship_sunk target_coord = 
+  let ai = state.hard_ai in 
+  if get_insane_phase ai 
+  then begin
+    if ship_hit 
+    then 
+      let smart_ai = (ai |> insane_to_smart |> update_smart_ai_after_hit) target_coord in
+      {state with hard_ai = smart_ai}
+    else 
+      state
+  end
+  (* TODO integrate all lists or bounds in this case *)
+  else if all_bounds_or_all_lists ai
+  then begin
+    let random_ai = smart_to_random ai in 
+    {state with hard_ai = random_ai}
+  end
+  else begin
+    if ship_hit && ship_sunk then 
+      let insane_ai = smart_to_insane ai in 
+      {state with hard_ai = insane_ai}
+    else if ship_hit && (not ship_sunk) then 
+      state
+    else if (not ship_hit) && (not ship_sunk) then 
+      let new_insane_ai = update_smart_after_miss ai in 
+      {state with hard_ai = new_insane_ai}
+    else 
+      failwith "A target cannot sink a ship, yet not hit a ship"
+  end
+
+
 
 
      (*

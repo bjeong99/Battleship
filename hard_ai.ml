@@ -1,3 +1,6 @@
+let c_COL = 10
+let c_ROW = 10
+
 type point = int * int
 
 type target_direction = 
@@ -8,6 +11,8 @@ type target_direction =
 
 type t = {
   guess_phase : bool;
+
+  insane : bool;
 
   (*
   target_horizontal : bool;
@@ -44,6 +49,22 @@ type t = {
 
 (** [get_guess phase ai] is the targeting phase the [ai] is in, either
     the random or smart phase. *)
+
+let all_lists_empty ai = 
+  ai.left_list = [] &&
+  ai.right_list = [] &&
+  ai.top_list = [] &&
+  ai.bottom_list = []
+
+let all_bounds_true ai = 
+  ai.hit_bottom_bound &&
+  ai.hit_left_bound &&
+  ai.hit_top_bound &&
+  ai.hit_right_bound
+
+let all_bounds_or_all_lists ai = 
+  all_lists_empty ai || all_bounds_true ai
+
 let get_guess_phase ai = 
   ai.guess_phase
 
@@ -72,10 +93,19 @@ let change_bottom_bound ai = {
 }
 
 let update_smart_after_miss ai = 
-  if not ai.hit_left_bound then change_left_bound ai 
-  else if not ai.hit_right_bound then change_right_bound ai 
-  else if not ai.hit_top_bound then change_top_bound ai 
-  else if not ai.hit_bottom_bound then change_bottom_bound ai 
+  if not ai.hit_left_bound then 
+    change_left_bound ai 
+  else if not ai.hit_right_bound then 
+    change_right_bound ai |> change_left_bound
+  else if not ai.hit_top_bound then 
+    change_top_bound ai 
+    |> change_right_bound 
+    |> change_left_bound
+  else if not ai.hit_bottom_bound then 
+    change_bottom_bound ai 
+    |> change_top_bound 
+    |> change_right_bound 
+    |> change_left_bound  
   else failwith "There are no other directions a miss hit could occur in"
 
 let rec generate_up hit_already (x, y) acc = 
@@ -191,8 +221,10 @@ let create_pairs m n =
 
 let initialize_hard_ai = {
   guess_phase = true;
-  remaining_coords = create_pairs 10 10;
+  remaining_coords = create_pairs c_COL c_ROW;
   locations_targeted = [];
+
+  insane = true;
 
   hit_left_bound = false;
   hit_right_bound  = false;
@@ -205,6 +237,142 @@ let initialize_hard_ai = {
   top_list = [];
   bottom_list = [];
 }
+
+(* Insane AI targeting *)
+
+type targeted =   
+  | Targeted
+  | Untargeted
+
+let empty_target_array = 
+  Array.make_matrix c_COL c_ROW Untargeted
+
+let rec update_target_array target_arr locs_targeted = 
+  match locs_targeted with
+  | [] -> target_arr
+  | (x, y) :: t -> 
+    target_arr.(x - 1).(y - 1) <- Targeted; 
+    update_target_array target_arr t 
+
+let empty_counts_array = 
+  Array.make_matrix c_COL c_ROW 0
+
+let incr_arr x y arr = 
+  arr.(x - 1).(y - 1) <- arr.(x - 1).(y - 1) + 1
+
+let rec iter_vert_ship x y_0 y_1 target_arr = 
+  if y_0 = y_1 
+  then begin
+    if target_arr.(x - 1).(y_0 - 1) = Untargeted 
+    then true
+    else false
+  end
+  else begin
+    if target_arr.(x - 1).(y_0 - 1) = Untargeted 
+    then iter_vert_ship x (y_0 + 1) y_1 target_arr
+    else false
+  end
+
+let rec iter_horiz_ship x_0 x_1 y target_arr = 
+  if x_0 = x_1 
+  then begin
+    if target_arr.(x_0 - 1).(y - 1) = Untargeted 
+    then true
+    else false
+  end
+  else begin
+    if target_arr.(x_0 - 1).(y - 1) = Untargeted 
+    then iter_horiz_ship (x_0 + 1) x_1 y target_arr
+    else false
+  end
+
+let rec iter_vert_col col start_y ship_length target_arr counts_arr =
+  if start_y + ship_length - 1 > c_ROW then counts_arr
+  else begin
+    if iter_vert_ship col start_y (start_y + ship_length - 1) target_arr 
+    then 
+      let () = counts_arr.(col - 1).(start_y - 1) <- counts_arr.(col - 1).(start_y - 1) + 1 in 
+      iter_vert_col col (start_y + 1) ship_length target_arr counts_arr
+    else iter_vert_col col (start_y + 1) ship_length target_arr counts_arr 
+  end
+
+let rec iter_horiz_row row start_x ship_length target_arr counts_arr =
+  if start_x + ship_length - 1 > c_COL then counts_arr
+  else begin
+    if iter_horiz_ship start_x (start_x + ship_length - 1) row target_arr 
+    then 
+      let () = counts_arr.(start_x - 1).(row - 1) <- counts_arr.(start_x - 1).(row - 1) + 1 in 
+      iter_horiz_row row (start_x + 1) ship_length target_arr counts_arr
+    else iter_horiz_row row (start_x + 1) ship_length target_arr counts_arr 
+  end
+
+let rec iter_col col ship_length target_arr counts_arr = 
+  if col = c_COL then counts_arr
+  else 
+    iter_vert_col col 1 ship_length target_arr counts_arr
+    |> iter_col (col + 1) ship_length target_arr 
+
+let rec iter_row row ship_length target_arr counts_arr = 
+  if row = c_ROW then counts_arr
+  else 
+    iter_horiz_row row 1 ship_length target_arr counts_arr
+    |> iter_row (row + 1) ship_length target_arr 
+
+let iter_ship ship_length target_arr counts_arr = 
+  iter_col 1 ship_length target_arr counts_arr
+  |> iter_row 1 ship_length target_arr
+
+let c_SHIP_LENGTHS = 
+  [2; 3; 3; 4; 5]
+
+let iter_counts target_arr = 
+  List.fold_left 
+    (fun init_counts_arr len -> iter_ship len target_arr init_counts_arr) 
+    empty_counts_array 
+    c_SHIP_LENGTHS
+
+let get_max_index_matrix matrix = 
+  let x = ref 1 in 
+  let y = ref 1 in 
+  let value = ref matrix.(1).(1) in 
+  for i = 1 to c_COL do 
+    for j = 1 to c_ROW do 
+      if matrix.(i - 1).(j - 1) > !value then value := matrix.(i - 1).(j - 1); x := i; y := j;
+    done
+  done; 
+  (!x, !y)
+
+let prob_target locs_targeted = 
+  locs_targeted 
+  |> update_target_array empty_target_array 
+  |> iter_counts 
+  |> get_max_index_matrix
+
+let insane_target ai = 
+  let chosen_target = prob_target ai.locations_targeted in 
+  let (x, y) = chosen_target in 
+  print_endline (string_of_int x);
+  print_endline (string_of_int y);
+  (chosen_target, 
+   {ai with
+    remaining_coords = 
+      List.filter (fun c -> c <> chosen_target) ai.remaining_coords;
+    locations_targeted = 
+      chosen_target :: ai.locations_targeted;})
+
+let insane_to_smart ai = {
+  ai with insane = false;
+}
+
+let smart_to_insane ai = 
+  ai
+  |> reset_bounds_and_lists 
+  |> (fun ai -> {ai with insane = true})
+
+let get_insane_phase ai = 
+  ai.insane
+
+
 
 
 (*

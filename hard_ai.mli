@@ -3,6 +3,8 @@ type point = int * int
 type t = {
   guess_phase : bool;
 
+  insane : bool;
+
   remaining_coords : point list;
   locations_targeted : point list;
 
@@ -18,6 +20,11 @@ type t = {
 }
 (** [initialize_hard_ai] is a starting instance of a hard AI. *)
 val initialize_hard_ai : t
+
+(** [all_bounds_or_all_lists ai] is true iff all the lists
+    for smart targeting are empty or all bounds are all true,
+    false otherwise. *)
+val all_bounds_or_all_lists : t -> bool
 
 (*
 (** [get_target_horizontal ai] is [true] iff the horizontal targetinbg phase
@@ -64,5 +71,16 @@ val update_smart_ai_after_hit : t -> point -> t
 (** [smart_to_random ai] is the new ai in the random phase.
     Requires: A ship that was being targeted was just sunk.*)
 val smart_to_random : t -> t
+
+(** [insane_target ai] is the point targeteted by [ai] with the functionally
+    updated ai. The point is chosen probabilistically in an algorithm
+    described elsewhere.*)
+val insane_target : t -> point * t
+
+val insane_to_smart : t -> t
+
+val smart_to_insane : t -> t
+
+val get_insane_phase : t -> bool
 
 
