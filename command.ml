@@ -35,9 +35,6 @@ let c_SHIPS_LIST = [
   "submarine";
 ]
 
-(** [string_to_char acc s] is a list of chars 
-    that correspond to the string [s] in the same ordering as [s]. 
-    For example, [hello] is [['h'; 'e'; 'l'; 'l'; 'o']]. *)
 let rec string_to_char acc s = 
   match s.[0] with
   | c -> string_to_char (c :: acc) (String.sub s 1 (String.length s - 1)) 
