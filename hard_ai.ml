@@ -240,11 +240,21 @@ let initialize_hard_ai = {
 
 (* Insane AI targeting *)
 
+let print_int_matrix matrix = 
+  matrix 
+  |> Array.map 
+    (fun array -> 
+       Array.fold_left 
+         (fun acc i -> 
+            acc ^ "  " ^ string_of_int i) "" array) 
+  |> Array.map print_endline
+  |> ignore
+
 type targeted =   
   | Targeted
   | Untargeted
 
-let empty_target_array = 
+let empty_target_array () = 
   Array.make_matrix c_COL c_ROW Untargeted
 
 let rec update_target_array target_arr locs_targeted = 
@@ -254,15 +264,24 @@ let rec update_target_array target_arr locs_targeted =
     target_arr.(x - 1).(y - 1) <- Targeted; 
     update_target_array target_arr t 
 
-let empty_counts_array = 
+let empty_counts_array () = 
   Array.make_matrix c_COL c_ROW 0
 
 let incr_arr x y arr = 
   arr.(x - 1).(y - 1) <- arr.(x - 1).(y - 1) + 1
 
+let rec incr_x_range x_0 x_1 y arr = 
+  if x_0 = x_1 then incr_arr x_0 y arr
+  else let () = incr_arr x_0 y arr in incr_x_range (x_0 + 1) x_1 y arr
+
+let rec incr_y_range x y_0 y_1 arr = 
+  if y_0 = y_1 then incr_arr x y_0 arr
+  else let () = incr_arr x y_0 arr in incr_y_range x (y_0 + 1) y_1 arr
+
 let rec iter_vert_ship x y_0 y_1 target_arr = 
   if y_0 = y_1 
   then begin
+    print_endline "in iter vert ship";
     if target_arr.(x - 1).(y_0 - 1) = Untargeted 
     then true
     else false
@@ -276,6 +295,7 @@ let rec iter_vert_ship x y_0 y_1 target_arr =
 let rec iter_horiz_ship x_0 x_1 y target_arr = 
   if x_0 = x_1 
   then begin
+    print_endline "in iter horiz ship";
     if target_arr.(x_0 - 1).(y - 1) = Untargeted 
     then true
     else false
@@ -289,31 +309,33 @@ let rec iter_horiz_ship x_0 x_1 y target_arr =
 let rec iter_vert_col col start_y ship_length target_arr counts_arr =
   if start_y + ship_length - 1 > c_ROW then counts_arr
   else begin
+    print_endline "in iter horiz col ";
     if iter_vert_ship col start_y (start_y + ship_length - 1) target_arr 
     then 
-      let () = counts_arr.(col - 1).(start_y - 1) <- counts_arr.(col - 1).(start_y - 1) + 1 in 
+      let () = incr_y_range col start_y (start_y + ship_length - 1) counts_arr in 
       iter_vert_col col (start_y + 1) ship_length target_arr counts_arr
     else iter_vert_col col (start_y + 1) ship_length target_arr counts_arr 
   end
 
 let rec iter_horiz_row row start_x ship_length target_arr counts_arr =
-  if start_x + ship_length - 1 > c_COL then counts_arr
+  if start_x + ship_length  - 1 > c_COL then counts_arr
   else begin
+    print_endline "in iter horiz row ";
     if iter_horiz_ship start_x (start_x + ship_length - 1) row target_arr 
     then 
-      let () = counts_arr.(start_x - 1).(row - 1) <- counts_arr.(start_x - 1).(row - 1) + 1 in 
+      let () = incr_x_range start_x (start_x + ship_length - 1) row counts_arr in 
       iter_horiz_row row (start_x + 1) ship_length target_arr counts_arr
     else iter_horiz_row row (start_x + 1) ship_length target_arr counts_arr 
   end
 
 let rec iter_col col ship_length target_arr counts_arr = 
-  if col = c_COL then counts_arr
+  if col = c_COL then iter_vert_col col 1 ship_length target_arr counts_arr
   else 
     iter_vert_col col 1 ship_length target_arr counts_arr
     |> iter_col (col + 1) ship_length target_arr 
 
 let rec iter_row row ship_length target_arr counts_arr = 
-  if row = c_ROW then counts_arr
+  if row = c_ROW then iter_horiz_row row 1 ship_length target_arr counts_arr
   else 
     iter_horiz_row row 1 ship_length target_arr counts_arr
     |> iter_row (row + 1) ship_length target_arr 
@@ -328,31 +350,36 @@ let c_SHIP_LENGTHS =
 let iter_counts target_arr = 
   List.fold_left 
     (fun init_counts_arr len -> iter_ship len target_arr init_counts_arr) 
-    empty_counts_array 
+    (empty_counts_array ())
     c_SHIP_LENGTHS
 
 let get_max_index_matrix matrix = 
-  let x = ref 1 in 
-  let y = ref 1 in 
-  let value = ref matrix.(1).(1) in 
+  let x = ref 0 in 
+  let y = ref 0 in 
+  let value = ref matrix.(0).(0) in 
   for i = 1 to c_COL do 
     for j = 1 to c_ROW do 
-      if matrix.(i - 1).(j - 1) > !value then value := matrix.(i - 1).(j - 1); x := i; y := j;
+      if matrix.(i - 1).(j - 1) > !value then (value := matrix.(i - 1).(j - 1); !value |> string_of_int |> print_endline; x := i; y := j;)
     done
   done; 
   (!x, !y)
 
 let prob_target locs_targeted = 
   locs_targeted 
-  |> update_target_array empty_target_array 
+  |> update_target_array (empty_target_array ())
+  |> (fun arr -> print_endline "counting"; arr)
   |> iter_counts 
+  |> (fun arr -> print_endline "This is the counts array"; arr)
+  |> (fun arr -> print_int_matrix arr; arr)
   |> get_max_index_matrix
 
+let string_point (x, y) = "(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")"
+let print_points lst = List.map (fun p -> print_endline (string_point p)) lst
+
 let insane_target ai = 
+  print_endline "locations targeted";
+  print_points ai.locations_targeted;
   let chosen_target = prob_target ai.locations_targeted in 
-  let (x, y) = chosen_target in 
-  print_endline (string_of_int x);
-  print_endline (string_of_int y);
   (chosen_target, 
    {ai with
     remaining_coords = 
