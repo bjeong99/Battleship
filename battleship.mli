@@ -125,24 +125,71 @@ val print_boards : string list -> unit
     and the axes. *)
 val print_matrix : string array array -> unit
 
-(** [print_player_ship_board game player] *)
+(** [print_player_ship_board game player] prints the game board from [game] 
+    specific to the [player]. *)
 val print_player_ship_board : t -> player -> unit
+
+(** [print_dict dict] prints the dictionary [dict]. *)
 val print_dict : list_t -> unit
+
+(** [string_of_dict dict] returns a string list representation of the dictionary
+    [dict]. *)
 val string_of_dict : list_t -> string list
+
+(** [change_damage_list (x, y) list acc] changes the list string [list] of a 
+    board at coordinates [(x, y)] to a damaged status. *)
 val change_damage_list : int * int -> (int * int * status) list -> 
   (int * int * status) list -> (int * int * status) list
+
+(** [cahnge_to_damage (x, y) dict] changes the status at coordinate [(x, y)] in
+    dict to Damaged. *)
 val change_to_damage : int * int -> list_t -> list_t
+
+(** [remaining_ships player game] returns the number of a [player] ships not 
+    placed on the board in [game]. *)
 val remaining_ships : player -> t -> int
+
+(** [remaining_ships_to_place player game] returns the list of [player] shps
+    not placed on the board in [game]. *)
 val remaining_ships_to_place : player -> t -> string list
+
+(** [check_ship_can_be_removed ship player game] checks if the [ship] on the 
+    board of [player] in [game] can be removed from the board. *)
 val check_ship_can_be_removed : string -> player -> t -> bool
+
+(** [remove_ship ship player game] removes a [player]'s [ship] from their board
+    in [game]. *) 
 val remove_ship : string -> player -> t -> t
+
+(** [check_all_ships_damaged dict] checks in [dict] if all ships have been 
+    damaged. *)
 val check_all_ships_damaged : list_t -> bool
+
+(** [check_ship_sunk pos_list] checks if the list of coordinates [pos_list] are 
+    all Damaged. *)
 val check_ship_sunk : (int * int * status) list -> bool
-val check_coordinate_in_positions : int * int -> (int * int * status) list -> bool
+
+(** [check_coordinate_in_positions (x, y) pos_list] checks if the coordinates 
+    [(x, y)] is in the coordinate list [pos_list]. *)
+val check_coordinate_in_positions : int * int -> (int * int * status) list 
+  -> bool
+
+(** [coordinate_to_ship_position (x, y) dict] checks if the coordinates [(x, y)]
+    is on a ship in dictionary [dict]. *)
 val coordinate_to_ship_position : int * int -> list_t -> bool
+
+(** [get_player_dict player game] gets a specific [player]'s dictionary in 
+    [game] *)
 val get_player_dict : player -> t -> list_t
+
+(** [direction_list] is a string list of directions a ship can be oriented. *)
 val direction_list : string list
+
+(** [choose_target pairs_list] chooses a random target in list of coordinates
+    [pairs_list]. *)
 val choose_target : (int * int) list -> int * int
+
+(** [create_pairs m n] *)
 val create_pairs : int -> int -> (int * int) list
 val ship_type_to_ship_name : ship_type -> string
 val random_ship : player -> t -> (int * int) * string * string
