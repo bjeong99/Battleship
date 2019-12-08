@@ -827,6 +827,32 @@ let get_difficulty_targeting_func diff =
   | AIHard -> target_hard_ai
   | AIInsane -> target_insane_ai
 
+
+let handle_succ f x y p state' bship stat ai diff hit sunk opp_string = 
+  after_move_message ();
+  print_boards_side_by_side p state';
+  print_sunk_hit_message hit sunk;
+  if check_victory (bool_to_player p) state' 
+  then let () = print_winner p stat in VictoryGame
+  else begin
+    if p = false && diff = AIHard then begin
+      delay ();
+      ANSITerminal.(print_string [green] ("\nPass the computer to " ^ opp_string ^ " .\n\n")); 
+      f (Some (update_hard_ai state' hit sunk (x + 1, y + 1) |> update_player)) bship stat diff ai
+    end
+    else if p = false && diff = AIInsane then begin
+      delay ();
+      ANSITerminal.(print_string [green] ("\nPass the computer to " ^ opp_string ^ " .\n\n")); 
+      f (Some (update_insane_ai state' hit sunk (x + 1, y + 1) |> update_player)) bship stat diff ai
+    end
+    else
+      begin
+        delay ();
+        ANSITerminal.(print_string [green] ("\nPass the computer to " ^ opp_string ^ " .\n\n")); 
+        f (Some (state' |> update_player)) bship stat diff ai
+      end
+  end
+
 (** [legal_target rec_func x y player state battleship ai_status diff ai]
     is the new game state after a legal targeting location ahs been made.  *)
 let legal_target rec_func x y player state battleship ai_status diff ai = 
