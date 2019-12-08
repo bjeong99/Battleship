@@ -660,6 +660,8 @@ let rec place_player2_ships state battleship ai_status diff ai =
 
 (* ########### Entering Trageting Phase ############# *)
 
+(** [print_entering_targeting_phase state battleship ai_status diff ai] has
+    the effect of telling the player they are entering the targeting phase.  *)
 let print_entering_targeting_phase state battleship ai_status diff ai = 
   ANSITerminal.(print_string [green]
                   "We are entering the targeting phase of the game.\n");
@@ -669,6 +671,9 @@ let print_entering_targeting_phase state battleship ai_status diff ai =
                   "The game continues until victory or a player quits. \n\n");              
   ContinueGame (state, battleship, ai_status, diff, ai)
 
+(** [build_in_game_state state battleship ai_status diff ai] creates
+    the in game state based on the [battleship] data from
+    laying down ships. *)
 let build_in_game_state state battleship ai_status diff ai = 
   if ai_status then 
     let in_game_state = 
@@ -687,24 +692,32 @@ let build_in_game_state state battleship ai_status diff ai =
 
 (* ########### In Game ############# *)
 
+(** [print_player_move_message player] prints
+    which player is to move.  *)
 let print_player_move_message player = 
   if player then ANSITerminal.(print_string [red]
                                  "\n\nPlayer One, it is your turn to move\n")
   else ANSITerminal.(print_string [blue]
                        "\n\nPlayer Two, it is your turn to move\n")
 
+(** [print_opponent_grid player state ] prints
+    the opponent's grid.  *)
 let print_opponent_grid player state = 
   ANSITerminal.(print_string [green]
                   "\n\nThis is your opponent grid.\n");
   State.print_guesses (State.bool_to_player player) state;
   print_newline ()
 
+(** [print_player_grid player state] prints
+    the player's grid.  *)
 let print_player_grid player state = 
   ANSITerminal.(print_string [green]
                   "\n\nThis is your grid.\n");      
   State.print_player_dict (State.bool_to_player player) state;
   print_newline ()
 
+(** [print_boards_side_by_side player state] prints
+    the player's grid along with opponent's grid side by side.  *)
 let print_boards_side_by_side player state = 
   ANSITerminal.(print_string [green]
                   "\n\nYour grid is the left and opponent is the right.\n\n");
@@ -715,6 +728,8 @@ let print_boards_side_by_side player state =
   let combined = State.combine_boards player_dict player_guesses in 
   State.print_boards combined
 
+(** [print_targeting_rules color ] is the rules for targeting
+    with the color corespondign to red as player1 and blue as player2.  *)
 let print_targeting_rules color = 
   ANSITerminal.(print_string [color]
                   "\n\nPlease target a location on the enemy map. \n");
@@ -723,34 +738,45 @@ let print_targeting_rules color =
     target, a comma, the x coordinate, comma,
     and the y coordinate. \n")
 
+(** [ print_in_main_phase ()] is a message for errror you are in main phase. *)
 let print_in_main_phase () = 
   ANSITerminal.(print_string [green]
                   "\nWe are no longer in the pregame phase. Try again.\n")
 
+(** [print_already_targeted ()] is a message saying
+    you targeted a location you previously targeted. *)
 let print_already_targeted () = 
   ANSITerminal.(print_string [green]
                   "\nYou cannot target a location you previously targeted.\n")
 
+(** [hit_ship_message ()] is ayou hit a ship. *)
 let hit_ship_message () = 
   ANSITerminal.(print_string [green]
                   "\nYou hit a ship.\n")
 
+(** [miss_ship_message ()] is ayou miss a ship. *)
 let miss_ship_message () = 
   ANSITerminal.(print_string [green]
                   "\nYou did not hit a ship.\n\n")
 
+(** [sink_ship_message ()] is ayou sunk a ship. *)
 let sink_ship_message () = 
   ANSITerminal.(print_string [green]
                   "\n\nYou sunk a ship.\n")   
 
+(** [not_sink_ship_message ()] is did not sink a ship. *)
 let not_sink_ship_message () = 
   ANSITerminal.(print_string [green]
                   "\nYou did not sink a ship.\n\n")
 
+(** [after_move_message ()] is the message announcing
+    the new board of after your move will be displayed *)
 let after_move_message () = 
   ANSITerminal.(print_string [green]
                   "\n\nThese are the grids after you made your move.\n")
 
+(** [print_sunk_hit_message ship_hit ship_sunk] prints whehter [ship_hit]
+    and [ship_sunk]. *)
 let print_sunk_hit_message ship_hit ship_sunk = 
   (if ship_hit 
    then hit_ship_message ()
@@ -759,29 +785,41 @@ let print_sunk_hit_message ship_hit ship_sunk =
    then sink_ship_message ()
    else not_sink_ship_message ()) |> ignore
 
+(** [print_player1_wins ()] announcs player 1 won. *)
 let print_player1_wins () = 
   ANSITerminal.(print_string [green]
                   "\n\nPlayer One, you win!.\n")
 
+(** [print_player2_wins ai_stauts] announcs player 2 won
+    including if it is an ai based on [ai_status]. *)
 let print_player2_wins ai_status = 
   if ai_status then ANSITerminal.(print_string [green]
                                     "\n\nThe AI wins!.\n")
   else ANSITerminal.(print_string [green]
                        "\n\nPlayer Two, you win!.\n")
 
+(** [print_winner player ai_status] announcs the winner. *)
 let print_winner player ai_status = 
   (if player then print_player1_wins ()
    else print_player2_wins ai_status) |> ignore
 
+(** [get_state_from state_option] gets the state from [state_option]. 
+
+    Raises : ["No state was given. "] if [state_option] is [None] *)
 let get_state_from state_option = 
   match state_option with
   | Some state -> state
   | None -> failwith "No state was given. "
 
+(** [choose_color player ] is red if [player] is [true]
+    blue otherwise. *)
 let choose_color player = 
   if player then ANSITerminal.red 
   else ANSITerminal.blue
 
+
+(** [get_difficulty_targeting_func diff ] is the correct targeting
+    function based on ai difficulty [diff]. *)
 let get_difficulty_targeting_func diff = 
   match diff with
   | AIEasy -> target_ai
@@ -789,23 +827,14 @@ let get_difficulty_targeting_func diff =
   | AIHard -> target_hard_ai
   | AIInsane -> target_insane_ai
 
+(** [legal_target rec_func x y player state battleship ai_status diff ai]
+    is the new game state after a legal targeting location ahs been made.  *)
 let legal_target rec_func x y player state battleship ai_status diff ai = 
   let string_opp_player =
     match player with
     | true -> "Player 2"
     | false -> "Player 1"
-  in 
-  (*if diff = AIHard && player = false then
-    if check_victory (bool_to_player player) state 
-    then let () = print_winner player ai_status in VictoryGame
-    else 
-    begin
-      delay ();
-      ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-      rec_func (Some (state |> update_player)) battleship ai_status diff ai
-    end
-    else*)
-  match target_ship (x, y) (bool_to_player player) state with
+  in match target_ship (x, y) (bool_to_player player) state with
   | State.Failure (new_state, CoordinateVisited) ->
     print_already_targeted (); 
     rec_func (Some new_state) battleship ai_status diff ai
@@ -814,8 +843,6 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
   | State.Success (new_state, ship_hit, ship_sunk) ->
     after_move_message ();
     print_boards_side_by_side player new_state;
-    (*print_opponent_grid player new_state;
-      print_player_grid player new_state; *)
     print_sunk_hit_message ship_hit ship_sunk;
     if check_victory (bool_to_player player) new_state 
     then let () = print_winner player ai_status in VictoryGame
@@ -837,28 +864,25 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
         rec_func (Some (new_state |> update_player)) battleship ai_status diff ai
       end
 
-
+(** [target state_option battleship ai_status diff ai]
+    allows the player to make a target on the opponent board.  *)
 let rec target state_option battleship ai_status diff ai = 
   let state = get_state_from state_option in 
   let player = get_current_player state in
   let color = choose_color player in 
-  (* delay (); *)
   print_player_move_message player;
   print_boards_side_by_side player state;
-  (*print_opponent_grid player state;
-    print_player_grid player state;*)
   print_targeting_rules color;
   if player = false && ai_status then 
-    (*if diff = AIHard then
-      let ((x, y), new_ai, new_state) = target_hard_ai ai state in 
-      legal_target 
-        target (x - 1) (y - 1) player new_state battleship ai_status diff new_ai
-      else*)
     let targeting_func = get_difficulty_targeting_func diff in 
     let (x, y), new_state = targeting_func state in 
     legal_target 
       target (x - 1) (y - 1) player new_state battleship ai_status diff ai
-  else begin
+  else 
+    handle_target_result state battleship ai_status diff ai player
+
+(*
+begin
     match () |> read_line |> parse with
     | YesNo _ -> 
       print_yes_no_phrase (); target (Some state) battleship ai_status diff ai
@@ -878,19 +902,47 @@ let rec target state_option battleship ai_status diff ai =
       print_in_main_phase (); target (Some state) battleship ai_status diff ai
   end
 
+*)
+
+(** [handle_target_result state battleship ai_status diff ai player]
+    deals with a player command to target.  *)
+and handle_target_result state battleship ai_status diff ai player = 
+  match () |> read_line |> parse with
+  | YesNo _ -> 
+    print_yes_no_phrase (); target (Some state) battleship ai_status diff ai
+  | Quit -> 
+    print_quit (); EndGame
+  | InvalidCommand -> 
+    print_syntax_error (); target (Some state) battleship ai_status diff ai
+  | Valid (_, _, _, _) -> 
+    print_in_main_phase (); target (Some state) battleship ai_status diff ai
+  | Target (x, y) -> 
+    legal_target target x y player state battleship ai_status diff ai
+  | Remove _ ->
+    print_in_main_phase (); target (Some state) battleship ai_status diff ai
+  | FinishPlacement ->
+    print_in_main_phase (); target (Some state) battleship ai_status diff ai
+  | Random ->
+    print_in_main_phase (); target (Some state) battleship ai_status diff ai
+
 
 (* ########### In Game ############# *)
 
 (* ########### End Game ############# *)
 
+
+(** [print_ending_message ())] is the quitting message. *)
 let print_ending_message () = 
   ANSITerminal.(print_string [green]
-                  "\n\nQuitting game.\n")
+                  "\n\nLeaving Terminal.\n")
 
+(** [finish_game ())] is the winning message. *)
 let print_victory_message () = 
   ANSITerminal.(print_string [green]
                   "\n\nGood game. Game over.\n")
 
+(** [finish_game game_status] is the ending message based on
+    [game_status] *)
 let finish_game game_status = 
   match game_status with
   | ContinueGame _ -> failwith "Illegal: Battleship games always terminate. "
@@ -911,10 +963,8 @@ let () =
   |> (>>>) determine_ai_difficulty
   |> (>>>) print_player1_add_ships
   |> (>>>) place_player1_ships 
-  (*|> (>>>) change_phase_player1*)
   |> (>>>) print_player2_add_ships
   |> (>>>) place_player2_ships
-  (*|> (>>>) change_phase_player2*)
   |> (>>>) print_entering_targeting_phase 
   |> (>>>) build_in_game_state
   |> (>>>) target
