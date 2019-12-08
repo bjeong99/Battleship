@@ -1,21 +1,29 @@
 open Hard_ai
 
+(* constants relevant to board size *)
 let c_ROWS = 10
 let c_COLS = 10
 
+(* constant relevant to displaying board for player to view *)
 let c_BOARD_SEP = "    "
 
+(* [player] is represents the player. *)
 type player = 
   | Player1
   | Player2
 
+(** [bool_to_player b] is [Player1] is [b] is [true]
+    else [Player2]. *)
 let bool_to_player b = 
   if b then Player1 else Player2
 
+(* [grid_guess] is represents the whether a coordinate guessed on your
+   opponent's grid was a hit or a miss. *)
 type grid_guess = 
   | Miss
   | Hit
 
+(* [ship_type] represents the type of the ship *)
 type ship_type = 
   | Battleship 
   | AircraftCarrier 
@@ -23,6 +31,22 @@ type ship_type =
   | Cruiser 
   | Submarine 
 
+(* [t] is represents the state of the game 
+   [current_player]  is the player to make a move this turn
+   [next_player] is the player who will move next, but does not move this turn
+   [player_1_grid_guesses] are the locations where [player1] has targeted, 
+   tagged with a hit or miss.
+   [player_1_ship_dict] are the locations whre [player1] placed his ships.
+   [player_2_grid_guesses] are the locations where [player2] has targeted, 
+   tagged with a hit or miss.
+   [player_2_ship_dict] are the locations whre [player2] placed his ships.
+   [pos_targeted] are the enemy locations the easy AI has targeted already.
+   [pos_remaining] are the enemy board locations where the easy AI
+   has not yet targeted. 
+   [surrounding_positions] is the locations that the medium Ai can target
+   that surround a targeted position. 
+   [guess_phase] is the phase of targeting: guess or smart. 
+   [hard_ai] is the AI data for hard and insane AI. *)
 type t = {
   current_player : bool;
   next_player : bool;
@@ -39,6 +63,10 @@ type t = {
   hard_ai : Hard_ai.t
 }
 
+(** [init_state b1 b2 l1 l2] is the state of the game,
+    with [b1] as the first player and [b2] as the second player,
+    and [l1] as the locations where Player1 placed his ships,
+    and [l2] as the locations where Player2 placed his ships.  *)
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   current_player = player_1;
   next_player = player_2;
@@ -53,45 +81,76 @@ let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   hard_ai = initialize_hard_ai;
 }
 
+(** [update_player st] is changes [st] so that the player who just moved
+    will alternate so that the other player can move next. *)
 let update_player state = 
   {state with 
    current_player = state.next_player;
    next_player = state.current_player;}
 
+(** [get_current_player st] is the player who will move on this turn,
+    [true] for player1, [false] for player2.  *)
 let get_current_player state = 
   state.current_player
 
+(** [get_next_player st] is the next player to move, while on this turn, 
+    with [true] for player1, [false] for player2. *)
 let get_next_player state = 
   state.next_player
 
+(** [check_coordinate_guessed (x, y) player state] is [true] iff [(x, y)]
+    was a location that [player] has already targeted.  *)
 let check_coordinate_guessed (x, y) player state = 
   match player with
   | Player1 -> 
-    state.player_1_grid_guesses |> List.map (fun (x, y, guess) -> (x, y)) |> List.mem (x, y)
+    state.player_1_grid_guesses 
+    |> List.map (fun (x, y, guess) -> (x, y)) 
+    |> List.mem (x, y)
   | Player2 -> 
-    state.player_2_grid_guesses |> List.map (fun (x, y, guess) -> (x, y)) |> List.mem (x, y)
+    state.player_2_grid_guesses 
+    |> List.map (fun (x, y, guess) -> (x, y)) 
+    |> List.mem (x, y)
 
+(** [check_bounds (x, y)] is [true] iff both [x] and [y]
+    are between 0 and 9 inclusive. *)
 let check_bounds (x, y)  = 
   x >= 0 && x < 10 && y >= 0 && y < 10
 
+(** [check_coordinate (x, y) player state] is [true] iff both [x] and [y]
+    are between 0 and 9 inclusive AND [(x, y)] was not a location
+    that the [player] had previously targeted. *)
 let check_coordinate (x, y) player state = 
   check_bounds (x, y) && not (check_coordinate_guessed (x, y) player state)
 
+(** [target (x, y) player state] is the updated [state] with 
+    the location [(x, y)] with the damage from of the hit recorded on
+    the opposing player's ship idctionary, and with the player's grid guesses
+    updated with the coordinate targeted and whether it was a hit or a miss. *)
 let target (x, y) player state = 
   match player with
   | Player1 ->
     if Battleship.check_cell_occupied (x, y) state.player_2_ship_dict 
     then {state with 
-          player_2_ship_dict = Battleship.change_to_damage (x, y) state.player_2_ship_dict;
+          player_2_ship_dict = 
+            Battleship.change_to_damage (x, y) state.player_2_ship_dict;
           player_1_grid_guesses = (x, y, Hit) :: state.player_1_grid_guesses}
-    else {state with player_1_grid_guesses = (x, y, Miss) :: state.player_1_grid_guesses}
+    else {state with 
+          player_1_grid_guesses = (x, y, Miss) :: state.player_1_grid_guesses}
   | Player2 ->
     if Battleship.check_cell_occupied (x, y) state.player_1_ship_dict
     then {state with 
-          player_1_ship_dict = Battleship.change_to_damage (x, y) state.player_1_ship_dict;
+          player_1_ship_dict = 
+            Battleship.change_to_damage (x, y) state.player_1_ship_dict;
           player_2_grid_guesses = (x, y, Hit) :: state.player_2_grid_guesses}
-    else {state with player_2_grid_guesses = (x, y, Miss) :: state.player_2_grid_guesses}
+    else {state with 
+          player_2_grid_guesses = (x, y, Miss) :: state.player_2_grid_guesses}
 
+(** [get_player_guess (x, y) dict] is [true] if the location
+    in the [dict] of guesses was Hit previously, otherwise if there was a miss,
+    then [false].
+
+    Raises: ["(x, y) not a location you targeted"] if [(x, y)] was a location
+    that was not previously targeted by the player.  *)
 let rec get_hit_status (x, y) dict = 
   match dict with
   | [] -> failwith "(x, y) not a location you targeted"
@@ -99,6 +158,12 @@ let rec get_hit_status (x, y) dict =
     if x = x' && y = y' then status = Hit
     else get_hit_status (x, y) t
 
+(** [get_player_guess (x, y) player state] is [true] if the location
+    the player guesses was Hit previously, otherwise if there was a miss,
+    then [false].
+
+    Raises: ["(x, y) not a location you targeted"] if [(x, y)] was a location
+    that was not previously targeted by the player.  *)
 let get_player_guess (x, y) player state = 
   match player with
   | Player1 -> 
@@ -106,6 +171,12 @@ let get_player_guess (x, y) player state =
   | Player2 ->
     get_hit_status (x, y) state.player_2_grid_guesses
 
+
+(** [check_ship_sunk (x, y) player state] is [true] iff the location
+    the [player] guesses [(x, y)] ultimately caused an enemy ship to sink.
+
+    Raises: ["(x, y) not a location you targeted"] if [(x, y)] was a location
+    that was not previously targeted by the player.  *)
 let check_ship_sunk (x, y) player state = 
   match player with
   | Player1 -> 
@@ -115,23 +186,37 @@ let check_ship_sunk (x, y) player state =
     if not (get_player_guess (x, y) player state) then false
     else Battleship.coordinate_to_ship_position (x, y) state.player_1_ship_dict
 
+(* [error] represents a mistake in targeting, for example,
+   an error is [CoordinateVisited] if that location was visited previously,
+   and [OutOfBounds] if it was not on the map *)
 type error = 
   | CoordinateVisited
   | OutOfBounds
 
+(* [action] represents if a targeting action can be carried out or not,
+   and is either a [Success] of a new state, with a ship hit or not,
+   and a ship sunk or not,
+   or a [failure] with an exception type. *)
 type action = 
   | Success of t * bool * bool
   | Failure of t * error
 
+(** [target_ship (x, y) p st] is the [action] corresponding to 
+    [p] targeting location [(x, y)] on the enemy's grid. 
+    Requires: [x] and [y] satisify that they are between 0 and 9 inclusive. *)
 let target_ship (x, y) player state = 
-  if not (check_bounds (x, y)) then Failure (state, OutOfBounds) 
-  else if not (check_coordinate (x, y) player state) then Failure (state, CoordinateVisited)
+  if not (check_bounds (x, y)) then 
+    Failure (state, OutOfBounds) 
+  else if not (check_coordinate (x, y) player state) then 
+    Failure (state, CoordinateVisited)
   else 
     let new_state = target (x, y) player state in 
     let hit_or_miss_status = get_player_guess (x, y) player new_state in 
     let ship_sunk = check_ship_sunk (x, y) player new_state in 
     Success (new_state, hit_or_miss_status, ship_sunk)
 
+(** [guesses_to_matrix player game] is the matrix of guesses
+    that the player made.  *)
 let guesses_to_matrix player game = 
   let player_dict = 
     (match player with
@@ -149,9 +234,18 @@ let guesses_to_matrix player game =
       guesses_to_matrix_helper t grid
   in guesses_to_matrix_helper player_dict grid
 
+(** [string_of_guesses player game] is a list of strings consisting
+    of the guesses made by the player. The list is ordered by row,
+    so that the first row represents the first element of the list
+    and so forth. *)
 let string_of_guesses player game = 
   game |> guesses_to_matrix player |> Battleship.string_of_matrix
 
+
+(** [string_of_player_dict player game] is a list of strings consisting
+    of the ship locations placed  by the player. The list is ordered by row,
+    so that the first row represents the first element of the list
+    and so forth. *)
 let string_of_player_dict player game = 
   match player with 
   | Player1 ->
@@ -159,23 +253,58 @@ let string_of_player_dict player game =
   | Player2 ->
     game.player_2_ship_dict |> Battleship.string_of_dict
 
-let combine_boards lst1 lst2 = 
-  let x_axis = "    A  B  C  D  E  F  G  H  I  J" ^ c_BOARD_SEP ^ "     A B C D E F G H I J" in
-  let empty = "" in 
-  let rec combine_helper lst1 lst2 acc digit=  
-    match lst1, lst2 with
-    | [], [] -> acc
-    | [], _ -> failwith "lst2 longer than lst1"
-    | _, [] -> failwith "lst1 longer than lst2"
-    | h1 :: t1, h2 :: t2 -> 
-      let digit_string = 
-        match digit with
-        | 10 -> string_of_int 10;
-        | x -> " " ^ (string_of_int x);
-      in
-      combine_helper t1 t2 ((digit_string ^ " " ^ h1 ^ c_BOARD_SEP ^ digit_string ^ " " ^ h2) :: acc) (digit - 1)
-  in x_axis :: empty :: (combine_helper lst1 lst2 [] 10)
+(** [string_of_digit digit] is the string correspinding to a digit
+    , e.g. [10] becomes ["10"] and one digit numbers become 
+    [1] is [" 1"]. 
 
+    Requires: [digit] is between [0] and [10] inclusive. *)
+let string_of_digit digit = 
+  match digit with
+  | 10 -> string_of_int 10;
+  | x -> " " ^ (string_of_int x)
+
+(** [combine_helper lst1 lst2 acc digit] combines the two lists of strings
+    via the rule [[a1;b1;c1;...]] [[a2;b2;c2;...]] becomes
+    [[a1 ^ a2; b1 ^ b2; c1 ^ c2...]]. 
+
+    Requires : [lst1] and [lst2] are lists of player boards.
+    Requires: [digit] is between [0] and [10] inclusive. 
+
+    Raises : ["lst2 longer than lst1"] if [lst2] length is greater than length 
+    of[lst1]. 
+    Raises : ["lst1 longer than lst2"] if [lst1] length is greater than length 
+    of[lst2]. *)
+let rec combine_helper lst1 lst2 acc digit =  
+  match lst1, lst2 with
+  | [], [] -> acc
+  | [], _ -> failwith "lst2 longer than lst1"
+  | _, [] -> failwith "lst1 longer than lst2"
+  | h1 :: t1, h2 :: t2 -> 
+    let digit_string = string_of_digit digit in 
+    combine_helper t1 t2 
+      ((digit_string ^ " " ^ h1 ^ c_BOARD_SEP ^ digit_string  ^ " " ^ h2)::acc) 
+      (digit - 1)
+
+(** [combine_boards lst1 lst2] is combines the two lists of strings
+    via the rule [[a1;b1;c1;...]] [[a2;b2;c2;...]] becomes
+    [[a1 ^ a2; b1 ^ b2; c1 ^ c2...]]. 
+
+    Requires : [lst1] and [lst2] are lists of player boards.
+
+    Raises : ["lst2 longer than lst1"] if [lst2] length is greater than length 
+    of[lst1]. 
+    Raises : ["lst1 longer than lst2"] if [lst1] length is greater than length 
+    of[lst2]. *)
+let combine_boards lst1 lst2 = 
+  let x_axis = 
+    "    A  B  C  D  E  F  G  H  I  J" 
+    ^ c_BOARD_SEP 
+    ^ "     A B C D E F G H I J" in
+  let empty = "" in 
+  x_axis :: empty :: (combine_helper lst1 lst2 [] 10)
+
+(** [print_boards board_list] is the game board printed to the screen 
+    row by row, with the first element (row) of [sl] printed first.  *)
 let rec print_boards board_list = 
   match board_list with
   | [] -> ()
@@ -183,9 +312,16 @@ let rec print_boards board_list =
     print_endline h; 
     print_boards t
 
+(** [print_boards player game] is the game guesses for player [p] 
+    printed to the screen row by row, with the 
+    first element (row) of [sl] printed first.  *)
 let print_guesses player game = 
   game |> guesses_to_matrix player |> Battleship.print_matrix
 
+(** [print_player_dict player game] is the where the ships 
+    for player [player] were placed
+    printed to the screen row by row, with the 
+    first element (row) of [game] printed first.  *)
 let print_player_dict player game = 
   match player with 
   | Player1 ->
@@ -193,6 +329,9 @@ let print_player_dict player game =
   | Player2 ->
     game.player_2_ship_dict |> Battleship.print_dict 
 
+(** [check_victory player game] is [true] if [player] has sunk all the ships
+    of his/her opponent. This means that all five ships of the opposing
+    player have hits on every location. *)
 let check_victory player game =
   match player with
   | Player1 ->
@@ -200,8 +339,13 @@ let check_victory player game =
   | Player2 -> 
     Battleship.check_all_ships_damaged game.player_1_ship_dict
 
-(* AI SHIT *)
+(* AI Related Stuff *)
 
+(** [create_pairs m n] are all the possible pairs with
+    first element from [1] to [m] inclusive
+    and the second from [1] to [n] inclusive. 
+
+    Requires: [m] and [n] are both non-zero positive integers. *)
 let create_pairs m n = 
   let rec create_rows m n acc =
     if m > 0 then 
@@ -212,14 +356,24 @@ let create_pairs m n =
       acc
   in create_rows m n []
 
+(** [choose_target pairs_list] is the random target that the Easy 
+    and medium and hard AI's choose. It is an element of 
+    [pairs_list]. 
+
+    Requires: [pairs_list] consists of only elements never targeted before,
+    and that [pairs_list] is not empty. *) 
 let choose_target pairs_list = 
   let () = Random.self_init () in   
   pairs_list 
   |> List.length 
   |> Random.int 
-  (*|> (fun l -> l - 1) *)
   |> List.nth pairs_list
 
+(** [get_hit_or_miss (x, y) grid_guesses] is whether a loction 
+    [(x, y)] has been hit or not, not returning a bool, as
+    the other function does. 
+    If [(x, y)] was not guessed and is not in [grid_guesses],
+    returns [Miss]. *)
 let rec get_hit_or_miss (x, y) grid_guesses = 
   match grid_guesses with
   | (x', y', guess) :: t -> 
@@ -227,9 +381,22 @@ let rec get_hit_or_miss (x, y) grid_guesses =
     else get_hit_or_miss (x, y) t
   | [] -> Miss
 
+(** [get_occupied_or_not (x, y) enemy_ship_pos_list] is [true]
+    if [(x, y)] is occupied on the [enemy_ship_pos_list]. *)
 let get_occupied_or_not (x, y) enemy_ship_pos_list = 
-  enemy_ship_pos_list |> List.fold_left (fun acc (str, int_lst) -> int_lst :: acc) [] |> List.flatten |> List.map (fun (x, y, _) -> (x, y)) |> List.mem (x, y)
+  enemy_ship_pos_list 
+  |> List.fold_left (fun acc (str, int_lst) -> int_lst :: acc) [] 
+  |> List.flatten 
+  |> List.map (fun (x, y, _) -> (x, y)) 
+  |> List.mem (x, y)
 
+(** [get_surrounding_positions (x, y) state] are the surrounding positions
+    on the board around the targeted location [(x, y)] in the current [state] 
+    after [(x, y)] has been targeted and marked on pos targeted. 
+
+    Requires: [(x, y)] have [x] and [y] in the 0 and 9 inclusive. 
+
+    Requires: Must be called after target for the given AI. *)
 let get_surrounding_positions (x, y) state = 
   if get_occupied_or_not (x - 1, y - 1) state.player_1_ship_dict then
     [(x, (y - 1));
@@ -239,11 +406,24 @@ let get_surrounding_positions (x, y) state =
     |> List.filter (fun (x, y) -> check_bounds (x - 1, y - 1)) 
   else []
 
+(** [print_pairs lst] is a printed representation of pairs in a list. 
+    For Debugging Purposes. *)
 let rec print_pairs lst = 
   match lst with
-  | (x, y) :: t -> ("(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")") |> print_endline; print_pairs t
+  | (x, y) :: t -> 
+    ("(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")") 
+    |> print_endline; 
+    print_pairs t
   | [] -> ()
 
+(** [update_targeted_locations ai_data target_loc] is the new ai with
+    updated information about where the AI just targeted included 
+    in its [pos_targeted], [pos_remaining] and [surrounding_positions]
+    fields.
+
+    Requires: Must apply to ai every single time a location is targeted
+    by the AI follow a call of [target].
+    This must be used by all Ai difficulties.  *)
 let update_targeted_locations ai_data target_loc = 
   let previously_targeted_locs = ai_data.pos_targeted in 
   let new_surround_pos = 
@@ -256,19 +436,18 @@ let update_targeted_locations ai_data target_loc =
          else -1)
     |> List.filter (fun elt -> elt <> target_loc) 
     |> List.filter (fun elt -> not (List.mem elt previously_targeted_locs)) in 
-  print_endline "These are the pairs of close locations";
-  print_pairs new_surround_pos;
-  print_endline "These are the position_targeted";
-  print_pairs previously_targeted_locs;
-  {
-    ai_data with
-    pos_targeted = target_loc :: (ai_data.pos_targeted);
-    pos_remaining = 
-      List.filter (fun elt -> elt <> target_loc) (ai_data.pos_remaining);
-    surrounding_positions = new_surround_pos;
-  }
-(*|> target target_loc Player2 *)
+  {ai_data with
+   pos_targeted = target_loc :: (ai_data.pos_targeted);
+   pos_remaining = 
+     List.filter (fun elt -> elt <> target_loc) (ai_data.pos_remaining);
+   surrounding_positions = new_surround_pos;}
 
+(** [initialize_ai player_1 b2 player_2 player_1_pregame player_2_pregame] 
+    is the new ai that carries information
+    about [b1] which represents player1 and [b2] as player2, and [l1], 
+    the locations
+    where player1 placed his ships and [l2], the locations where player2 placed
+    his ships.  *)
 let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   current_player = player_1;
   next_player = player_2;
@@ -283,21 +462,45 @@ let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   hard_ai = initialize_hard_ai;
 }
 
+(** [target_ai st] is the location that the easy AI targets,
+    plus an updated state [st] that has the updates the ai on its targeting
+    routine based on the hit/miss of its last target. 
+
+    For easy AI, there is a trivial update to the targeting routine
+    which just adds the location targeted to where it has already it. *)
 let target_ai ai_data = 
   let chosen_target = choose_target ai_data.pos_remaining in 
   let ai_data' = update_targeted_locations ai_data chosen_target in 
   (chosen_target, ai_data')
 
+(** [medium_choose_target pairs_list surrounding_pairs] is 
+    the target randomly chosen from [surrounding_pairs]. The target
+    is guaranteed not to be in [pairs_list]. 
+
+    Requires : [surrounding_pairs] is not empty!.
+    E.G. there must still be some location untargeted by this AI. *)
 let medium_choose_target pairs_list surrounding_pairs = 
   if surrounding_pairs = [] then choose_target pairs_list
   else choose_target surrounding_pairs
 
+(** [target_medium_ai ai_data] is the location that the medium AI targets,
+    plus an updated state [ai_data] that has the updates the ai 
+    on its targeting routine based on the hit/miss of its last target. 
+
+    For medium  AI, the targeting route changes based on if there is a hit or 
+    a miss. *)
 let target_medium_ai ai_data = 
-  let chosen_target = medium_choose_target ai_data.pos_remaining ai_data.surrounding_positions in 
+  let chosen_target = 
+    medium_choose_target ai_data.pos_remaining ai_data.surrounding_positions in 
   let ai_data' = update_targeted_locations ai_data chosen_target in 
   (chosen_target, ai_data')
 
+(** [target_hard_ai state] is the location that the medium AI targets,
+    plus an updated state [state] that has the updates the ai on its targeting
+    routine based on the hit/miss of its last target. 
 
+    For hard  AI, the targeting route changes based on if there is a hit or 
+    a miss. *)
 let target_hard_ai state = 
   let ai = state.hard_ai in 
   if get_guess_phase ai 
@@ -310,36 +513,50 @@ let target_hard_ai state =
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
 
+(** [update_hard_ai state ship_hit ship_sunk target_coord] 
+    is the updated state with a new ai
+    after the AI targets a location and the location [(x, y)] on the
+    enemy board has been attacked. The AI is updated based on whether
+    that attack at [target_coord] was a hit or a miss or not, 
+    which is [ship_hit] and whether a ship was sunk 
+    or not [ship_sunk] where [ship_hit] is [true] iff
+    a ship was hit and [ship_sunk] is [true] iff a ship was sunk. 
+
+    Requires: [update_hard_ai] must be called every time after [target] 
+    has been used by the ai. 
+
+    Raises : ["A target cannot sink a ship, yet not hit a ship"] if
+    [ship_hit] is [true] but [ship_sunk] is [false].*)
 let update_hard_ai state ship_hit ship_sunk target_coord = 
   let ai = state.hard_ai in 
   if get_guess_phase ai 
   then begin
     if ship_hit 
-    then 
-      let smart_ai = (ai |> random_to_smart |> update_smart_ai_after_hit) target_coord in
+    then let smart_ai = 
+           (ai |> random_to_smart |> update_smart_ai_after_hit) target_coord in
       {state with hard_ai = smart_ai}
-    else 
-      state
-  end
+    else state end
   else if all_bounds_or_all_lists ai
   then begin
     let random_ai = smart_to_random ai in 
-    {state with hard_ai = random_ai}
-  end
-  (* TODO integrate all lists or bounds in this case *)
+    {state with hard_ai = random_ai} end
   else begin
     if ship_hit && ship_sunk then 
       let random_ai = smart_to_random ai in 
       {state with hard_ai = random_ai}
-    else if ship_hit && (not ship_sunk) then 
-      state
+    else if ship_hit && (not ship_sunk) then state
     else if (not ship_hit) && (not ship_sunk) then 
       let new_smart_ai = update_smart_after_miss ai in 
       {state with hard_ai = new_smart_ai}
     else 
-      failwith "A target cannot sink a ship, yet not hit a ship"
-  end
+      failwith "A target cannot sink a ship, yet not hit a ship" end
 
+(** [target_insane_ai state] is the location that the medium AI targets,
+    plus an updated state [st] that has the updates the ai on its targeting
+    routine based on the hit/miss of its last target. 
+
+    For hard  AI, the targeting route changes based on if there is a hit or 
+    a miss. *)
 let target_insane_ai state = 
   let ai = state.hard_ai in 
   if get_insane_phase ai 
@@ -352,35 +569,43 @@ let target_insane_ai state =
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
 
+(** [update_insane_ai state ship_hit ship_sunk target_coord] 
+    is the updated state with a new ai
+    after the AI targets a location and the location [(x, y)] on the
+    enemy board has been attacked. The AI is updated based on whether
+    that attack at [target_coord] was a hit or a miss or not, 
+    which is [ship_hit] and whether a ship was sunk 
+    or not [ship_sunk] where [ship_hit] is [true] iff
+    a ship was hit and [ship_sunk] is [true] iff a ship was sunk. 
+
+    Requires: [update_hard_ai] must be called every time after [target] 
+    has been used by the ai. 
+
+    Raises : ["A target cannot sink a ship, yet not hit a ship"] if
+    [ship_hit] is [true] but [ship_sunk] is [false].*)
 let update_insane_ai state ship_hit ship_sunk target_coord = 
   let ai = state.hard_ai in 
   if get_insane_phase ai 
   then begin
     if ship_hit 
-    then 
-      let smart_ai = (ai |> insane_to_smart |> update_smart_ai_after_hit) target_coord in
+    then let smart_ai = 
+           (ai |> insane_to_smart |> update_smart_ai_after_hit) target_coord in
       {state with hard_ai = smart_ai}
-    else 
-      state
-  end
-  (* TODO integrate all lists or bounds in this case *)
+    else state end
   else if all_bounds_or_all_lists ai
   then begin
     let random_ai = smart_to_random ai in 
-    {state with hard_ai = random_ai}
-  end
+    {state with hard_ai = random_ai} end
   else begin
     if ship_hit && ship_sunk then 
       let insane_ai = smart_to_insane ai in 
       {state with hard_ai = insane_ai}
-    else if ship_hit && (not ship_sunk) then 
-      state
+    else if ship_hit && (not ship_sunk) then state
     else if (not ship_hit) && (not ship_sunk) then 
       let new_insane_ai = update_smart_after_miss ai in 
       {state with hard_ai = new_insane_ai}
     else 
-      failwith "A target cannot sink a ship, yet not hit a ship"
-  end
+      failwith "A target cannot sink a ship, yet not hit a ship" end
 
 
 

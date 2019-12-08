@@ -52,11 +52,10 @@ val get_next_player : t -> bool
 
 (** [target_ship (x, y) p st] is the [action] corresponding to 
     [p] targeting location [(x, y)] on the enemy's grid. 
-    Requires: [x] and [y] satisify that they are between 0 and 9 inclusive.  *)
+    Requires: [x] and [y] satisify that they are between 0 and 9 inclusive. *)
 val target_ship : int * int -> player -> t -> action
 
 (*val ships_found : t -> string list
-
   Would this be good for a powerup? for ships_found?*) 
 
 (** [get_player_guess (x, y) p st] is [true] if the location
@@ -87,6 +86,8 @@ val string_of_player_dict : player -> t -> string list
 (** [combine_boards sl1 sl2] is combines the two lists of strings
     via the rule [[a1;b1;c1;...]] [[a2;b2;c2;...]] becomes
     [[a1 ^ a2; b1 ^ b2; c1 ^ c2...]]. 
+
+    Requires : [sl1] and [sl2] are lists of player boards.
 
     Raises : ["lst2 longer than lst1"] if [sl2] length is greater than length 
     of[sl1]. 
@@ -121,16 +122,16 @@ val initialize_ai : bool -> bool -> Battleship.list_t -> Battleship.list_t -> t
 
     For easy AI, there is a trivial update to the targeting routine
     which just adds the location targeted to where it has already it. *)
-
 val target_ai : t -> ((int * int) * t)
+
 (** [target_medium_ai st] is the location that the medium AI targets,
     plus an updated state [st] that has the updates the ai on its targeting
     routine based on the hit/miss of its last target. 
 
     For medium  AI, the targeting route changes based on if there is a hit or 
     a miss. *)
-
 val target_medium_ai : t -> ((int * int) * t)
+
 (** [target_hard_ai st] is the location that the medium AI targets,
     plus an updated state [st] that has the updates the ai on its targeting
     routine based on the hit/miss of its last target. 
