@@ -326,6 +326,8 @@ let parse_player_command battleship player str =
   | Valid (x, y, direction, ship) -> 
     place_player_ship battleship player x y direction ship
   | Random -> PGRandom
+  | Use (_,_,_) -> print_wrong_phase (); PGContinue battleship
+  | Powerups -> print_wrong_phase (); PGContinue battleship
 
 (** [ ai_to_string ((x, y), direction, ship)] is a string corresponding
     to an AI command to target [(x, y)] with orientation
@@ -341,9 +343,9 @@ let ai_to_string ((x, y), direction, ship) =
     if the AI does not give a Valid command to place.  *)
 let rec place_single_ai_ship battleship player str = 
   match parse str with
-  | Quit | InvalidCommand | YesNo _ 
-  | Target _| Remove _ | FinishPlacement | Random -> 
-    failwith "Violate precondition place_single_ai_ship,place_ai_player2_ships"
+  | Quit | InvalidCommand | YesNo _ | Target _| Remove _ | FinishPlacement 
+  | Random | Use (_,_,_) | Powerups -> 
+    failwith "Violates preconditions of place_single_ai_ship and place_ai_player2_ships"
   | Valid (x, y, direction, ship) -> begin
       let direction' = string_to_direction direction in 
       let ship' = string_to_ship ship in 
@@ -738,6 +740,14 @@ let print_targeting_rules color =
     target, a comma, the x coordinate, comma,
     and the y coordinate. \n")
 
+let print_use_powerups () =
+  ANSITerminal.(print_string [green]
+                  "\nUsing powerups! Boom! \n")
+
+let print_powerups () = 
+  ANSITerminal.(print_string [green]
+                  "\nYou do NOT have any powerups yet! \n")
+
 (** [ print_in_main_phase ()] is a message for errror you are in main phase. *)
 let print_in_main_phase () = 
   ANSITerminal.(print_string [green]
@@ -926,6 +936,10 @@ begin
       print_in_main_phase (); target (Some state) battleship ai_status diff ai
     | Random ->
       print_in_main_phase (); target (Some state) battleship ai_status diff ai
+    | Use (_,_,_) ->
+      print_use_powerups (); target (Some state) battleship ai_status diff ai
+    | Powerups ->
+      print_powerups (); target (Some state) battleship ai_status diff ai
   end
 
 *)
@@ -950,6 +964,10 @@ and handle_target_result state battleship ai_status diff ai player =
     print_in_main_phase (); target (Some state) battleship ai_status diff ai
   | Random ->
     print_in_main_phase (); target (Some state) battleship ai_status diff ai
+  | Use (_,_,_) ->
+    print_use_powerups (); target (Some state) battleship ai_status diff ai
+  | Powerups ->
+    print_powerups (); target (Some state) battleship ai_status diff ai
 
 
 (* ########### In Game ############# *)

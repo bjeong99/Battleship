@@ -31,6 +31,11 @@ type ship_type =
   | Cruiser 
   | Submarine 
 
+type powerup_type =
+  | SquareHit
+  | ReHit
+  | InstaKill
+
 (* [t] is represents the state of the game 
    [current_player]  is the player to make a move this turn
    [next_player] is the player who will move next, but does not move this turn
