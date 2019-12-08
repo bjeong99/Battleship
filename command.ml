@@ -161,6 +161,7 @@ let parse_lay_down_ship x y direction ship =
   let x_digit = char_to_coord x in 
   if process_number x_digit && 
      process_number y && 
+     (int_of_string y > 0) &&
      process_string direction && 
      process_string ship &&
      process_direction direction &&
@@ -185,6 +186,7 @@ let parse_target x y target =
   let x_digit = char_to_coord x in
   if process_number x_digit && 
      process_number y &&
+     (int_of_string y > 0) &&
      target = c_TARGET
   then Target (int_of_string x_digit - 1, int_of_string y - 1)
   else InvalidCommand
@@ -207,16 +209,13 @@ let parse_remove remove ship =
     [Quit] if [word] is the quit string
     else [InvalidCommand]. *)
 let parse_single_word word = 
-  print_endline "this is word";
-  print_endline word;
-  print_endline c_RANDOM;
   if word = c_FINISH then FinishPlacement
   else if word = c_RANDOM then Random
   else if word = c_YES then YesNo true
   else if word = c_NO then YesNo false
   else if word = c_QUIT then Quit
   else if word = c_POWERUPS then Powerups
-  else let () = print_endline "Invalid"; in InvalidCommand
+  else InvalidCommand
 
 (** [cleaned_to_command str_lst] will parse [str_lst] into
     a valid command or an [InvalidCommand] *)
@@ -272,6 +271,7 @@ let check_difficulty str =
   if str = c_EASY then Easy
   else if str = c_MEDIUM then Medium
   else if str = c_HARD then Hard
+  else if str = c_INSANE then Insane
   else InvalidDifficulty
 
 (** [parse_difficulty str] is the [difficulty] corresponding to [str]. *)
