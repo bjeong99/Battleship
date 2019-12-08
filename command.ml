@@ -145,6 +145,7 @@ let parse_lay_down_ship x y direction ship =
   let x_digit = char_to_coord x in 
   if process_number x_digit && 
      process_number y && 
+     (int_of_string y > 0) &&
      process_string direction && 
      process_string ship &&
      process_direction direction &&
@@ -160,6 +161,7 @@ let parse_target x y target =
   let x_digit = char_to_coord x in
   if process_number x_digit && 
      process_number y &&
+     (int_of_string y > 0) &&
      target = c_TARGET
   then Target (int_of_string x_digit - 1, int_of_string y - 1)
   else InvalidCommand

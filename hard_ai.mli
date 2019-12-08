@@ -32,6 +32,10 @@ val all_bounds_or_all_lists : t -> bool
 val get_target_horizontal : t -> bool
 *)
 
+(** [get_insane_phase ai] is the targeting phase the [ai] is in, either
+    the insane or guess type. *)
+val get_insane_phase : t -> bool
+
 (** [get_guess phase ai] is the targeting phase the [ai] is in, either
     the random or smart phase. *)
 val get_guess_phase : t -> bool
@@ -77,10 +81,15 @@ val smart_to_random : t -> t
     described elsewhere.*)
 val insane_target : t -> point * t
 
+(** [insane_to_smart ai] is a the new ai such that it is now
+    targeting in a non smart manner, starting with the point [p].
+    Requires: A hit on a ship must have occurred just before this function
+    is applied. *)
 val insane_to_smart : t -> t
 
+(** [smart_to_insane ai] is the new ai in the INSANE phase.
+    Requires: A ship that was being targeted was just sunk.*)
 val smart_to_insane : t -> t
 
-val get_insane_phase : t -> bool
 
 
