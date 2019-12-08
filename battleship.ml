@@ -18,6 +18,11 @@ type ship_type =
   | Cruiser 
   | Submarine 
 
+type powerup_type =
+  | SquareHit
+  | ReHit
+  | InstaKill
+
 type status = 
   | Damaged
   | Undamaged
@@ -35,6 +40,8 @@ type t = {
   player_2_ships_placed : ship_type list;
   player_2_ships_remaining : ship_type list;
   player_2_ships : (string * ((int * int * status) list) ) list;
+  player_1_powerups : powerup_type list;
+  player_2_powerups : powerup_type list;
 }
 
 type error = 
@@ -56,6 +63,12 @@ let starter_ship_list = [
   Submarine ;
 ]
 
+let powerup_list = [
+  SquareHit ;
+  ReHit ;
+  InstaKill ;
+]
+
 let empty = {
   player_1_ships_placed = [];
   player_1_ships_remaining = starter_ship_list;
@@ -63,6 +76,8 @@ let empty = {
   player_2_ships_placed = [];
   player_2_ships_remaining = starter_ship_list;
   player_2_ships = [];
+  player_1_powerups = [];
+  player_2_powerups = [];
 }
 
 let choose_player b = 
@@ -75,6 +90,19 @@ let ship_length ship =
   | Destroyer  -> 3
   | Cruiser  -> 3
   | Submarine  -> 2
+
+let string_to_powerup powerup =
+  let powerlow = String.lowercase_ascii powerup in 
+  if powerlow = "squarehit" then SquareHit
+  else if powerlow = "rehit" then ReHit
+  else if powerlow = "instakill" then InstaKill
+  else failwith "not legal powerup"
+
+let powerup_to_string powerup =
+  match powerup with
+  | SquareHit -> "squarehit"
+  | ReHit -> "rehit"
+  | InstaKill -> "instakill"
 
 let string_to_ship ship = 
   let shiplow = String.lowercase_ascii ship in 
@@ -152,6 +180,11 @@ let insert ship (x, y) direction dict =
 let remove ship dict = 
   List.filter (fun (ship_elt, _ ) -> ship <> ship_elt) dict
 
+let insert_pup powerup (x,y) dict =
+  let pup_positions = generate_pos_list (x,y) 1 Right in 
+  let pp = pup_positions |> List.map (fun (x,y,z) -> (x,y)) in 
+  (powerup, pp) :: dict
+
 let check_bounds (x, y) length direction = 
   match direction with
   | Left -> 
@@ -162,6 +195,10 @@ let check_bounds (x, y) length direction =
     x >= 0 && x < 10 && y - length + 1 >= 0 && y < 10  
   | Down -> 
     x >= 0 && x < 10 && y >= 0 && y + length - 1 < 10
+
+let square_check_bounds_down (x,y) =
+  check_bounds (x,y) 2 Down &&
+  check_bounds (x,y) 2 Right  
 
 let check_cell_occupied (x, y) dict = 
   List.fold_left (fun init (key, values_list) -> values_list @ init) [] dict |> 

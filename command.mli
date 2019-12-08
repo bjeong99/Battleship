@@ -34,6 +34,8 @@ type command =
   | Remove of string
   | FinishPlacement
   | Random
+  | Use of int * int * string
+  | Powerups
 
 (** [difficulty] represents the difficulty of the AI, which is always player 2. 
     [Easy] is an AI that always guesses randomly. 

@@ -23,6 +23,11 @@ type ship_type =
   | Cruiser 
   | Submarine 
 
+type powerup_type =
+  | SquareHit
+  | ReHit
+  | InstaKill
+
 type t = {
   current_player : bool;
   next_player : bool;

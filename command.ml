@@ -4,6 +4,8 @@ let c_REMOVE = "remove"
 let c_FINISH = "finish"
 let c_RANDOM = "random"
 let c_QUIT = "quit"
+let c_USE = "use"
+let c_POWERUPS = "powerups"
 
 (* affirmative constants *)
 let c_YES = "yes"
@@ -33,6 +35,12 @@ let c_SHIPS_LIST = [
   "cruiser";
   "destroyer";
   "submarine";
+]
+
+let c_POWERUPS_LIST = [
+  "squarehit" ;
+  "rehit" ;
+  "instakill" ;
 ]
 
 (** [string_to_char acc s] is a list of chars 
@@ -88,6 +96,9 @@ let char_to_coord n =
   | "J"| "j" | "10" -> "10"
   | _ -> "not a digit"
 
+let process_powerup p =
+  List.mem p c_POWERUPS_LIST
+
 (** [process_direction d] is [true] iff [d] is in [c_DIRECTION_LIST]. *)
 let process_direction d = 
   List.mem d c_DIRECTION_LIST
@@ -137,6 +148,8 @@ type command =
   | Remove of string
   | FinishPlacement
   | Random
+  | Use of int * int * string
+  | Powerups
 
 (** [parse_lay_down_ship x y direction ship] is
     [Valid (x - 1, y - 1, direction ship] if
@@ -153,6 +166,15 @@ let parse_lay_down_ship x y direction ship =
      process_direction direction &&
      process_ship_name ship 
   then Valid (int_of_string x_digit - 1, int_of_string y - 1, direction, ship)
+  else InvalidCommand
+
+let parse_use x y use powerup =
+  let x_digit = char_to_coord x in 
+  if process_number x_digit &&
+     process_number y &&
+     use = c_USE &&
+     process_powerup powerup
+  then Use (int_of_string x_digit - 1, int_of_string y - 1, powerup)
   else InvalidCommand
 
 (** [parse_target x y target] is 
@@ -193,6 +215,7 @@ let parse_single_word word =
   else if word = c_YES then YesNo true
   else if word = c_NO then YesNo false
   else if word = c_QUIT then Quit
+  else if word = c_POWERUPS then Powerups
   else let () = print_endline "Invalid"; in InvalidCommand
 
 (** [cleaned_to_command str_lst] will parse [str_lst] into
@@ -205,6 +228,8 @@ let cleaned_to_command str_lst =
     parse_target x y target
   | remove :: ship :: [] ->
     parse_remove remove ship
+  | use :: p :: at :: x :: y :: [] ->
+    parse_use x y use p
   | word :: [] ->
     parse_single_word word
   | _ -> InvalidCommand
