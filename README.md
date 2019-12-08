@@ -7,7 +7,7 @@
 
 ### AI:
 - Player can choose if they want to play against another human or an AI
-- Three difficulties if AI is chosen - easy, medium and hard (TODO: Insane ai)
+- Three difficulties if AI is chosen - easy, medium, hard and insane
 
 ### Ship Placement Phase:
 - Player can place ship where they want
