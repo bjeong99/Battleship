@@ -4,6 +4,20 @@ open Battleship
 open Command
 open Hard_ai
 
+(** [cmp_set_like_lists lst1 lst2] compares two lists to see whether
+    they are equivalent set-like lists.  That means checking two things.
+    First, they must both be {i set-like}, meaning that they do not
+    contain any duplicates.  Second, they must contain the same elements,
+    though not necessarily in the same order. *)
+let cmp_set_like_lists lst1 lst2 =
+  let uniq1 = List.sort_uniq compare lst1 in
+  let uniq2 = List.sort_uniq compare lst2 in
+  List.length lst1 = List.length uniq1
+  &&
+  List.length lst2 = List.length uniq2
+  &&
+  uniq1 = uniq2
+
 (** [make_command_test name str expected] is the OUnit
     test named [name] that asserts the equality of [string]
     and [parse expected]. *)
@@ -20,13 +34,294 @@ let make_difficulty_test name str expected =
       assert_equal expected (parse_difficulty str)
     )
 
+let str_list_to_str lst = 
+  List.fold_left (fun init s -> init ^ " " ^ s) "" lst
+
+let make_battleship_test 
+    name
+    battleship
+    num_ships_remain1
+    num_ships_remain2
+    ships_remain1
+    ships_remain2
+    all_ships_sunk1
+    all_ships_sunk2
+    coordinates_ships1
+    bool_coords1
+    coordinates_ships2
+    bool_coords2 = 
+  name >:: (fun _ ->
+      assert_equal ~printer: string_of_int num_ships_remain1 (remaining_ships (choose_player true) battleship);
+      assert_equal ~printer: string_of_int num_ships_remain2 (remaining_ships (choose_player false) battleship);
+      assert_equal ~printer: str_list_to_str ~cmp: cmp_set_like_lists ships_remain1 (remaining_ships_to_place (choose_player true) battleship);
+      assert_equal ~printer: str_list_to_str ~cmp: cmp_set_like_lists ships_remain2 (remaining_ships_to_place (choose_player false) battleship);
+      assert_equal ~printer: string_of_bool all_ships_sunk1 (battleship |> get_player_dict (choose_player true) |> check_all_ships_damaged);
+      assert_equal ~printer: string_of_bool all_ships_sunk2 (battleship |> get_player_dict (choose_player false) |> check_all_ships_damaged);
+      assert_equal ~printer: string_of_bool bool_coords1 
+        (List.for_all (fun (x, y) -> check_coordinate_in_positions (x, y) (battleship |> get_player_dict (choose_player true) |> List.map (fun (_, t) -> t) |> List.flatten)) coordinates_ships1);
+      assert_equal ~printer: string_of_bool bool_coords2 
+        (List.for_all (fun (x, y) -> check_coordinate_in_positions (x, y) (battleship |> get_player_dict (choose_player false) |> List.map (fun (_, t) -> t) |> List.flatten)) coordinates_ships2)
+    )
+
 let state_tests = [
 
 ]
 
 
 let battleship_tests = [
-
+  make_battleship_test
+    "empty"
+    Battleship.empty
+    5
+    5
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert one ship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    4
+    5
+    ["Aircraft Carrier"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    false 
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert two ship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    3
+    5
+    ["Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    false 
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true;
+  make_battleship_test
+    "insert THREE ship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")) 
+    2
+    5
+    ["Destroyer"; "Cruiser";]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    false 
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *) (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert four ship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")) 
+    1
+    5
+    ["Destroyer";]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    false 
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *) (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert FIve ship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")) 
+    0
+    5
+    []
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    false 
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *) (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert one ship p2"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    4
+    []
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Submarine"]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4)]
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert two ship player 2"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    3
+    []
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; ]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9)]
+    true;
+  make_battleship_test
+    "insert THREE ship player 2"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    2
+    []
+    ["Battleship"; "Destroyer"; ]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1);]
+    true;(* because there are no ships placed currently, so vacuously, all are damaged *) (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert four ship player 2"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    1
+    []
+    [ "Destroyer"; ]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8)]
+    true; (* because there are no ships placed currently, so vacuously, all are damaged *) (* because there are no ships placed currently, so vacuously, all are damaged *)
+  make_battleship_test
+    "insert FIve ship player 2"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 7) Down Destroyer (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    0
+    []
+    []
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
+    true;
 ]
 
 let command_tests = [
