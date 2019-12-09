@@ -14,6 +14,8 @@ open Hard_ai
 let print_welcome_message () = 
   ANSITerminal.(print_string [green]
                   "\n\nWelcome to the 3110 Battleship Game.\n");
+  ANSITerminal.scroll 16;
+  Unix.pause ();
   ()
 
 (* ############ Welcome Message ############# *)
