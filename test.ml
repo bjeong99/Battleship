@@ -322,6 +322,204 @@ let battleship_tests = [
     true (* because there are no ships placed currently, so vacuously, all are damaged *)
     [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
     true;
+  make_battleship_test
+    "delete after 10 inserts on player 1"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 7) Down Destroyer (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> remove_ship "battleship" (choose_player true))
+    1
+    0
+    ["Battleship"]
+    []
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
+    true;
+  make_battleship_test
+    "reinsert battleship"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 7) Down Destroyer (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> remove_ship "battleship" (choose_player true)
+     |> insert_ship (1, 6) Down Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure"))
+    0
+    0
+    []
+    []
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(1, 6); (1, 7); (1, 8); (1, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(2, 4); (3, 4); (4, 4); (8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
+    true;
+  make_battleship_test
+    "remove from player 2 a cruiser"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 7) Down Destroyer (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> remove_ship "cruiser" (choose_player false))
+    0
+    1
+    []
+    ["Cruiser"]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); (9, 1); (9, 2); (9, 3)]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
+    true;
+  make_battleship_test
+    "remove from player 1 a destroyer after player 2 remove cruiser"
+    (Battleship.empty 
+     |> insert_ship (4, 9) Right Battleship (choose_player true) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (2, 3) Down AircraftCarrier (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (0, 1) Up Submarine (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 6) Left Cruiser (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (9, 1) Down Destroyer (choose_player true)
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (2, 4) Right Cruiser (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (8, 9) Right Submarine (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 5) Up AircraftCarrier (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (3, 8) Left Battleship (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (7, 7) Down Destroyer (choose_player false) 
+     |> (fun result -> match result with | Success b -> b | Failure _ -> failwith "failure")
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "destroyer" (choose_player true))
+    1
+    1
+    ["Destroyer"]
+    ["Cruiser"]
+    false 
+    false (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(4, 9); (5, 9); (6, 9); (7, 9); (2, 3); (2, 4); (2, 5); (2, 6); (2, 7);(0, 1); (0, 0); (7, 6); (6, 6); (5, 6); ]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    [(8, 9); (9, 9); (0, 5); (0, 4); (0, 3); (0, 2); (0, 1); (3, 8); (2, 8); (1, 8); (0, 8); (7, 7); (7, 8); (7, 9)]
+    true;
+  make_battleship_test
+    "single remove empty"
+    (Battleship.empty 
+     |> remove_ship "destroyer" (choose_player false))
+    5
+    5
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true;
+  make_battleship_test
+    "double remove empty"
+    (Battleship.empty 
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "destroyer" (choose_player true))
+    5
+    5
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true;
+  make_battleship_test
+    "double same player 1 empty"
+    (Battleship.empty 
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "destroyer" (choose_player true))
+    5
+    5
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true;
+  make_battleship_test
+    "double same player 2 empty"
+    (Battleship.empty 
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "destroyer" (choose_player false))
+    5
+    5
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    ["Aircraft Carrier"; "Battleship"; "Destroyer"; "Cruiser"; "Submarine"]
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true (* because there are no ships placed currently, so vacuously, all are damaged *)
+    []
+    true;
 ]
 
 let command_tests = [
