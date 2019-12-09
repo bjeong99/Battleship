@@ -63,6 +63,67 @@ let make_battleship_test
         (List.for_all (fun (x, y) -> check_coordinate_in_positions (x, y) (battleship |> get_player_dict (choose_player false) |> List.map (fun (_, t) -> t) |> List.flatten)) coordinates_ships2)
     )
 
+let make_random_battleship_test 
+    name
+    battleship
+    num_ships_remain1
+    num_ships_remain2
+    ships_remain1
+    ships_remain2
+    all_ships_sunk1
+    all_ships_sunk2 = 
+  name >:: (fun _ ->
+      assert_equal ~printer: string_of_int num_ships_remain1 (remaining_ships (choose_player true) battleship);
+      assert_equal ~printer: string_of_int num_ships_remain2 (remaining_ships (choose_player false) battleship);
+      assert_equal ~printer: str_list_to_str ~cmp: cmp_set_like_lists ships_remain1 (remaining_ships_to_place (choose_player true) battleship);
+      assert_equal ~printer: str_list_to_str ~cmp: cmp_set_like_lists ships_remain2 (remaining_ships_to_place (choose_player false) battleship);
+      assert_equal ~printer: string_of_bool all_ships_sunk1 (battleship |> get_player_dict (choose_player true) |> check_all_ships_damaged);
+      assert_equal ~printer: string_of_bool all_ships_sunk2 (battleship |> get_player_dict (choose_player false) |> check_all_ships_damaged)
+    ) 
+
+let rec repeated_random_insertion player battleship  = 
+  if remaining_ships (choose_player player) battleship = 0 then battleship
+  else
+    try 
+      (battleship 
+       |> random_ship (choose_player player)
+       |> (fun ((x, y), direction, ship) -> 
+           insert_ship 
+             (x, y) 
+             (string_to_direction direction) 
+             (string_to_ship ship) 
+             (choose_player player) 
+             battleship)
+       |> (fun result -> 
+           match result with 
+           | Success b -> b 
+           | Failure _ -> failwith "failure"))
+      |> repeated_random_insertion player
+    with 
+    | _ -> repeated_random_insertion player battleship 
+
+let rec repeated_ai_random_insertion battleship  = 
+  if remaining_ships (choose_player false) battleship = 0 then battleship
+  else
+    try 
+      (battleship 
+       |> randomly_laydown_ships 
+       |> (fun ((x, y), direction, ship) -> 
+           insert_ship 
+             (x, y) 
+             (string_to_direction direction) 
+             (string_to_ship ship) 
+             (choose_player false) 
+             battleship)
+       |> (fun result -> 
+           match result with 
+           | Success b -> b 
+           | Failure _ -> failwith "failure"))
+      |> repeated_ai_random_insertion 
+    with 
+    | _ -> repeated_ai_random_insertion battleship 
+
+
 let state_tests = [
 
 ]
@@ -520,6 +581,263 @@ let battleship_tests = [
     true (* because there are no ships placed currently, so vacuously, all are damaged *)
     []
     true;
+
+
+  (* randomized testing *)
+  make_random_battleship_test 
+    "insert player1 and player2 randomly"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false
+     |> remove_ship "cruiser" (choose_player false))
+    0
+    1
+    []
+    ["Cruiser"]
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false
+     |> remove_ship "cruiser" (choose_player false)
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "battleship" (choose_player false)
+     |> repeated_random_insertion false
+     |> remove_ship "destroyer" (choose_player false)
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "battleship" (choose_player false)
+     |> repeated_random_insertion false
+     |> repeated_random_insertion false
+     |> remove_ship "destroyer" (choose_player false)
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> repeated_random_insertion false
+     |> repeated_random_insertion false
+     |> remove_ship "destroyer" (choose_player false)
+     |> repeated_random_insertion false)
+    1
+    0
+    ["Cruiser"]
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> repeated_random_insertion false)
+    1
+    0
+    ["Cruiser"]
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> repeated_random_insertion false
+     |> repeated_random_insertion true)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> repeated_random_insertion false
+     |> repeated_random_insertion true)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion false
+     |> repeated_random_insertion false
+     |> remove_ship "destroyer" (choose_player false)
+     |> repeated_random_insertion false)
+    2
+    0
+    ["Cruiser"; "Aircraft Carrier"]
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion false)
+    2
+    0
+    ["Cruiser"; "Aircraft Carrier"]
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion true
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly and then remove and insert"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> remove_ship "cruiser" (choose_player true)
+     |> remove_ship "aircraftcarrier" (choose_player true)
+     |> repeated_random_insertion true
+     |> repeated_random_insertion false
+     |> repeated_random_insertion true)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly, with player 2 as AI"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_ai_random_insertion)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly, with player 2 as AI"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_ai_random_insertion
+     |> remove_ship "cruiser" (choose_player false)
+     |> repeated_ai_random_insertion)
+    0
+    0
+    []
+    []
+    false
+    false;
+  make_random_battleship_test 
+    "insert player1 and player2 randomly, with player 2 as AI"
+    (Battleship.empty 
+     |> repeated_random_insertion true
+     |> repeated_ai_random_insertion
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "battleship" (choose_player false)
+     |> remove_ship "cruiser" (choose_player false)
+     |> repeated_ai_random_insertion
+     |> remove_ship "cruiser" (choose_player false)
+     |> remove_ship "battleship" (choose_player false)
+     |> repeated_ai_random_insertion)
+    0
+    0
+    []
+    []
+    false
+    false;
+
+
+
+  (* bounds checking for insertion and removal *)
 ]
 
 let command_tests = [
