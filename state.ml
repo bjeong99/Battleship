@@ -640,6 +640,29 @@ let print_powerups player state =
   print_endline "These are you power ups:";
   powerups_to_string_list player state |> List.map print_endline |> ignore
 
+let get_player_powerups player state =
+  match player with
+  | Player1 -> state.player_1_inv
+  | Player2 -> state.player_2_inv
+
+let update_powerup_state player state powerup_type =
+  match player with 
+  |Player1 ->
+    let newlist = List.filter (fun pow -> (pow <> powerup_type)) state.player_1_inv in 
+    {state with player_1_inv = newlist}
+  |Player2 ->
+    let newlist = List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in 
+    {state with player_2_inv = newlist}
+
+(* | Player2 ->
+   if Battleship.check_cell_occupied (x, y) state.player_1_ship_dict
+   then {state with 
+      player_1_ship_dict = 
+        Battleship.change_to_damage (x, y) state.player_1_ship_dict;
+      player_2_grid_guesses = (x, y, Hit) :: state.player_2_grid_guesses}
+   else {state with 
+      player_2_grid_guesses = (x, y, Miss) :: state.player_2_grid_guesses} *)
+
 let add_powerup player state name = 
   match player with
   | Player1 ->

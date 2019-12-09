@@ -740,9 +740,34 @@ let print_targeting_rules color =
     target, a comma, the x coordinate, comma,
     and the y coordinate. \n")
 
-let print_use_powerups () =
-  ANSITerminal.(print_string [green]
-                  "\nUsing powerups! Boom! \n")
+
+(* poweups start  *)
+
+let use_squarehit x y player state battleship ai_status diff ai =
+  failwith ""
+
+let use_rehit x y player state battleship ai_status diff ai =
+  failwith ""
+
+let use_instakill x y player state battleship ai_status diff ai =
+  failwith ""
+
+let use_powerups pow x y player state battleship ai_status diff ai =
+  match pow with 
+  |"squarehit" ->
+    ANSITerminal.(print_string [green]
+                    "\nUsing SQUAREHIT! Boom! \n"); use_squarehit x y player state battleship ai_status diff ai
+  | "rehit" ->
+    ANSITerminal.(print_string [green]
+                    "\nUsing REHIT! Boom! \n"); use_rehit x y player state battleship ai_status diff ai
+  |"instakill" ->
+    ANSITerminal.(print_string [green]
+                    "\nUsing INSTAKILL! Boom! \n"); use_instakill x y player state battleship ai_status diff ai
+  | _ -> failwith "not a valid power-up :("
+
+(* powerups end *)
+
+
 (* 
 let print_powerups () = 
   ANSITerminal.(print_string [green]
@@ -906,6 +931,7 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
         rec_func (Some (new_state |> update_player)) battleship ai_status diff ai
       end
 
+
 (** [target state_option battleship ai_status diff ai]
     allows the player to make a target on the opponent board.  *)
 let rec target state_option battleship ai_status diff ai = 
@@ -970,8 +996,8 @@ and handle_target_result state battleship ai_status diff ai player =
     print_in_main_phase (); target (Some state) battleship ai_status diff ai
   | Random ->
     print_in_main_phase (); target (Some state) battleship ai_status diff ai
-  | Use (_,_,_) ->
-    print_use_powerups (); target (Some state) battleship ai_status diff ai
+  | Use (x,y,pow) ->
+    use_powerups pow x y player state battleship ai_status diff ai
   | Powerups ->
     print_powerups (bool_to_player player) state; target (Some state) battleship ai_status diff ai
 
