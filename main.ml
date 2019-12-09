@@ -743,10 +743,10 @@ let print_targeting_rules color =
 let print_use_powerups () =
   ANSITerminal.(print_string [green]
                   "\nUsing powerups! Boom! \n")
-
+(* 
 let print_powerups () = 
   ANSITerminal.(print_string [green]
-                  "\nYou do NOT have any powerups yet! \n")
+                  "\nYou do NOT have any powerups yet! \n") *)
 
 (** [ print_in_main_phase ()] is a message for errror you are in main phase. *)
 let print_in_main_phase () = 
@@ -876,7 +876,13 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
     rec_func (Some new_state) battleship ai_status diff ai
   | State.Failure (new_state, OutOfBounds) ->
     print_off_gameboard (); rec_func (Some new_state) battleship ai_status diff ai
-  | State.Success (new_state, ship_hit, ship_sunk) ->
+  | State.Success (state', ship_hit, ship_sunk) ->
+    let new_state = 
+      (if check_coord_in_powerups x y (choose_player player) battleship 
+       then 
+         let power_name = get_powerup_name x y (choose_player player) battleship in 
+         State.add_powerup (bool_to_player player) state' power_name 
+       else state') in
     after_move_message ();
     print_boards_side_by_side player new_state;
     print_sunk_hit_message ship_hit ship_sunk;
@@ -967,7 +973,7 @@ and handle_target_result state battleship ai_status diff ai player =
   | Use (_,_,_) ->
     print_use_powerups (); target (Some state) battleship ai_status diff ai
   | Powerups ->
-    print_powerups (); target (Some state) battleship ai_status diff ai
+    print_powerups (bool_to_player player) state; target (Some state) battleship ai_status diff ai
 
 
 (* ########### In Game ############# *)
@@ -995,6 +1001,22 @@ let finish_game game_status =
 
 (* ########### End Game ############# *)
 
+let update_player1_powerups state battleship ai_status diff ai = 
+  let battleship' = assign_powerups (choose_player true) battleship in 
+  ContinueGame (state, battleship', ai_status, diff, ai)
+
+let update_player2_powerups state battleship ai_status diff ai = 
+  let battleship' = assign_powerups (choose_player false) battleship in 
+  ContinueGame (state, battleship', ai_status, diff, ai)
+
+let print_player1_powerups state battleship ai_status diff ai = 
+  print_power_ups (choose_player true) battleship;
+  ContinueGame (state, battleship, ai_status, diff, ai)
+
+let print_player2_powerups state battleship ai_status diff ai = 
+  print_power_ups (choose_player false) battleship;
+  ContinueGame (state, battleship, ai_status, diff, ai)
+
 (* ########### Running Game ############# *)
 
 let () = 
@@ -1007,8 +1029,12 @@ let () =
   |> (>>>) determine_ai_difficulty
   |> (>>>) print_player1_add_ships
   |> (>>>) place_player1_ships 
+  |> (>>>) update_player1_powerups 
+  |> (>>>) print_player1_powerups
   |> (>>>) print_player2_add_ships
   |> (>>>) place_player2_ships
+  |> (>>>) update_player2_powerups
+  |> (>>>) print_player2_powerups
   |> (>>>) print_entering_targeting_phase 
   |> (>>>) build_in_game_state
   |> (>>>) target

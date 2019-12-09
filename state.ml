@@ -65,7 +65,12 @@ type t = {
   pos_remaining : (int * int) list;
   surrounding_positions : (int * int) list;
   guess_phase : bool;
-  hard_ai : Hard_ai.t
+  hard_ai : Hard_ai.t;
+
+
+  player_1_inv : string list;
+  player_2_inv : string list;
+
 }
 
 (** [init_state b1 b2 l1 l2] is the state of the game,
@@ -84,6 +89,9 @@ let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   surrounding_positions = [];
   guess_phase = true;
   hard_ai = initialize_hard_ai;
+
+  player_1_inv = [];
+  player_2_inv = [];
 }
 
 (** [update_player st] is changes [st] so that the player who just moved
@@ -465,6 +473,9 @@ let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   surrounding_positions = [];
   guess_phase = true;
   hard_ai = initialize_hard_ai;
+
+  player_1_inv = [];
+  player_2_inv = [];
 }
 
 (** [target_ai st] is the location that the easy AI targets,
@@ -612,8 +623,29 @@ let update_insane_ai state ship_hit ship_sunk target_coord =
     else 
       failwith "A target cannot sink a ship, yet not hit a ship" end
 
+let powerup_to_string powerup =
+  match powerup with
+  | SquareHit -> "squarehit"
+  | ReHit -> "rehit"
+  | InstaKill -> "instakill"
 
+let powerups_to_string_list  player state = 
+  match player with
+  | Player1 ->
+    List.fold_left (fun init powerup -> powerup :: init) [] state.player_1_inv
+  | Player2 ->
+    List.fold_left (fun init powerup ->  powerup :: init) [] state.player_2_inv
 
+let print_powerups player state = 
+  print_endline "These are you power ups:";
+  powerups_to_string_list player state |> List.map print_endline |> ignore
+
+let add_powerup player state name = 
+  match player with
+  | Player1 ->
+    {state with player_1_inv = name :: state.player_1_inv}
+  | Player2 ->
+    {state with player_2_inv = name :: state.player_2_inv}
 
      (*
      let init_state bs1 bs2 = 

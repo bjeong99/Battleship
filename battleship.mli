@@ -19,6 +19,11 @@ type player =
   | Player1
   | Player2
 
+type powerup_type =
+  | SquareHit
+  | ReHit
+  | InstaKill
+
 type list_t = (string * ((int * int * status) list) ) list
 
 type t
@@ -223,3 +228,19 @@ val random_ship : player -> t -> (int * int) * string * string
     Requires: The player has at least one ship remaining to place on 
     the board.*)
 val randomly_laydown_ships : t -> (int * int) * string * string
+
+(** [assign_powerups player game] assigns the [game] powerups
+    based on [player]. 
+
+    Requires: Apply on after all the ships for the player have been placed. *)
+val assign_powerups : player -> t -> t
+
+val print_power_ups : player -> t -> unit
+
+val string_of_matrix_2 : string array array -> string list
+
+val powerup_to_string : powerup_type -> string
+
+val check_coord_in_powerups : int -> int -> player -> t -> bool
+
+val get_powerup_name : int -> int -> player -> t -> string

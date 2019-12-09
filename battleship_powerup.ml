@@ -40,8 +40,8 @@ type t = {
   player_2_ships_placed : ship_type list;
   player_2_ships_remaining : ship_type list;
   player_2_ships : (string * ((int * int * status) list) ) list;
-  player_1_powerups : (int * int * powerup_type) list;
-  player_2_powerups : (int * int * powerup_type) list;
+  player_1_powerups : powerup_type list;
+  player_2_powerups : powerup_type list;
 }
 
 type error = 
@@ -279,7 +279,7 @@ let string_of_matrix matrix =
   for i = 0 to (c_ROWS - 1) do
     let s = ref "" in 
     for j = 0 to (c_COLS - 1) do 
-      s := !s ^ " " ^ matrix.(i).(j) 
+      s := !s ^ " " ^ matrix.(i).(j)
     done;
     init_list := !s :: !init_list;
   done;
@@ -515,137 +515,3 @@ let random_ship player game =
 let randomly_laydown_ships game = 
   randomly_laydown_ships_helper Player2 game
 
-let string_of_pair (x, y) = 
-  "(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")"
-
-let print_pairs_list lst = 
-  List.map string_of_pair lst |> List.map print_endline |> ignore
-
-(** [get_unvisited_loc dict] is all unvisited coordianteds based
-    on [dict]. *)
-let get_unvisited_loc dict = 
-  let coord_list = 
-    dict |> List.map (fun (s, lst) -> lst) 
-    |> List.flatten |> List.map (fun (x, y, ship) -> (x, y)) in
-  let full_list = create_pairs 10 10 in 
-  full_list 
-  |> List.map (fun (x, y) -> (x - 1), (y - 1))
-  |> List.filter (fun (x, y) -> not (List.mem (x, y) coord_list))
-
-
-(** [get_three_random_helper unvisited counter acc] is three random
-    coordinates from [unvisited]. *)
-let rec get_three_random_helper unvisited counter acc = 
-  if counter = 0 then acc 
-  else 
-    let length = List.length unvisited in 
-    let point = List.nth unvisited (Random.int length) in 
-    let new_list = List.filter (fun (x, y) -> (x, y) <> point) unvisited in 
-    get_three_random_helper new_list (counter - 1) (point :: acc)
-
-(** [assign_three_random_emojis dict] assigns three emojis to
-    the a random set of three coordinates. *)
-let assign_three_random_emojis dict = 
-  let unvisited = get_unvisited_loc dict in 
-  let three_random = get_three_random_helper unvisited 3 [] in 
-  List.map2 (fun (x, y) power -> (x, y, power)) three_random powerup_list
-
-(** [assign_powerups player game] assigns the [game] powerups
-    based on [player]. 
-
-    Requires: Apply on after all the ships for the player have been placed. *)
-let assign_powerups player game = 
-  match player with 
-  | Player1 -> 
-    {game with 
-     player_1_powerups = assign_three_random_emojis game.player_1_ships}
-  | Player2 ->
-    {game with 
-     player_2_powerups = assign_three_random_emojis game.player_2_ships}
-
-let empty_powerup () = 
-  Array.make_matrix 10 10 Emoji.water_wave
-
-let rec make_powerup_grid grid dict  = 
-  match dict with
-  | [] -> grid
-  | (x, y, powerup) :: t ->
-    if powerup = SquareHit
-    then let () = (grid.(y).(x) <- Emoji.collision) in make_powerup_grid grid t 
-    else if powerup = ReHit
-    then let () =  (grid.(y).(x) <- Emoji.gem_stone)in  make_powerup_grid grid t 
-    else if powerup = InstaKill
-    then let () = (grid.(y).(x) <- Emoji.skull) in make_powerup_grid grid t 
-    else failwith "Cannot get"
-
-let string_of_matrix_2 matrix = 
-  let init_list = ref [] in 
-  for i = 0 to (c_ROWS - 1) do
-    let s = ref "" in 
-    for j = 0 to (c_COLS - 1) do 
-      s := !s ^ " " ^ matrix.(i).(j) 
-    done;
-    init_list :=  !init_list @ [!s];
-  done;
-  !init_list
-
-(** [print_power_ups player game] prints the powerups of the player
-    to screen. 
-    Used for dbugging purposes. *)
-let print_power_ups player game = 
-  match player with 
-  | Player1 -> 
-    game.player_1_powerups 
-    |> make_powerup_grid (empty_powerup ())
-    |> string_of_matrix_2
-    |> List.map print_endline
-    |> ignore
-  | Player2 ->
-    game.player_2_powerups 
-    |> make_powerup_grid (empty_powerup ())
-    |> string_of_matrix_2
-    |> List.map print_endline
-    |> ignore
-
-let check_coord_in_powerups x y player battleship = 
-  match player with 
-  | Player1 ->
-    battleship.player_1_powerups 
-    |> List.map (fun (x, y, name) -> (x, y))
-    |> List.mem (x, y) 
-  | Player2 ->
-    battleship.player_2_powerups 
-    |> List.map (fun (x, y, name) -> (x, y))
-    |> List.mem (x, y) 
-
-
-
-let rec get_powerup_name_helper x y powerup_dict =
-  match powerup_dict with 
-  | [] -> failwith "Coul not find powerup"
-  | (x', y', powerup) :: t ->
-    if x' = x && y' = y then powerup_to_string powerup 
-    else get_powerup_name_helper x y t
-
-let get_powerup_name x y player battleship = 
-  match player with 
-  | Player1 ->
-    battleship.player_1_powerups 
-    |> get_powerup_name_helper x y
-  | Player2 ->
-    battleship.player_2_powerups 
-    |> get_powerup_name_helper x y
-
-
-let m = 
-  [|[|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |]; 
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-  |]

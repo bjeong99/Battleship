@@ -170,3 +170,7 @@ val target_insane_ai : t -> Hard_ai.point * t
     has been used by the ai. *)
 val update_insane_ai : t -> bool -> bool -> Hard_ai.point -> t
 
+val print_powerups : player -> t -> unit
+
+val add_powerup : player -> t -> string -> t
+
