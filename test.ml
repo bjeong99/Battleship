@@ -34,9 +34,41 @@ let make_difficulty_test name str expected =
       assert_equal expected (parse_difficulty str)
     )
 
+(** [str_list_to_str lst] concatenates all the elements of [lst]
+    together in the same order as [lst] from left ro right, with
+    a space as a delimiter. *)
 let str_list_to_str lst = 
   List.fold_left (fun init s -> init ^ " " ^ s) "" lst
 
+(**[make_battleship_test 
+    name 
+    battleship
+    num_ships_remain1
+    num_ships_remain2
+    ships_remain1
+    ships_remain2
+    all_ships_sunk1
+    all_ships_sunk2
+    coordinates_ships1
+    bool_coords1
+    coordinates_ships2
+    bool_coords2] 
+    is the OUnit2 test with name [name] that asserts the equality 
+    of 
+    [num_ships_remain1] and the number of remaining ships player 1 has 
+    [num_ships_remain2] and the number of remaining ships player 2 has 
+    [ships_remain1] and 
+      the  remaining ships player 1 has 
+    [ships_remain2] and 
+      the remaining ships player 2 has 
+    [all_ships_sunk1] and
+      if all the ships in battleship are sunk for player 1
+    [all_ships_sunk2] and
+      if all the ships in battleship are sunk for player 2
+    [bool_coords1] and if all coordinates in [coordinates_ships1] are in 
+      batteship
+    and [bool_coords2] and if all coordinates in [coordinates_ships2]
+      are in battleship *)
 let make_battleship_test 
     name
     battleship
@@ -103,6 +135,27 @@ let make_battleship_test
            coordinates_ships2)
     )
 
+(**[make_battleship_test 
+    name 
+    battleship
+    num_ships_remain1
+    num_ships_remain2
+    ships_remain1
+    ships_remain2
+    all_ships_sunk1
+    all_ships_sunk2] 
+    is the OUnit2 test with name [name] that asserts the equality 
+    of 
+    [num_ships_remain1] and the number of remaining ships player 1 has 
+    [num_ships_remain2] and the number of remaining ships player 2 has 
+    [ships_remain1] and 
+      the  remaining ships player 1 has 
+    [ships_remain2] and 
+      the remaining ships player 2 has 
+    [all_ships_sunk1] and
+      if all the ships in battleship are sunk for player 1
+    [all_ships_sunk2] and
+      if all the ships in battleship are sunk for player 2*)
 let make_random_battleship_test 
     name
     battleship
@@ -143,6 +196,9 @@ let make_random_battleship_test
          |> check_all_ships_damaged)
     ) 
 
+(** [repeated_random_insertion player battleship] repeated adds
+    ships for the [player] into [battleship]  randomly until
+    all ships are added.  *)
 let rec repeated_random_insertion player battleship  = 
   if remaining_ships (choose_player player) battleship = 0 then battleship
   else
@@ -164,6 +220,9 @@ let rec repeated_random_insertion player battleship  =
     with 
     | _ -> repeated_random_insertion player battleship 
 
+(** [repeated_ai_random_insertion battleship] repeated adds
+    ships for the ai (player2) into [battleship]  randomly until
+    all ships are added.  *)
 let rec repeated_ai_random_insertion battleship  = 
   if remaining_ships (choose_player false) battleship = 0 then battleship
   else
@@ -185,6 +244,9 @@ let rec repeated_ai_random_insertion battleship  =
     with 
     | _ -> repeated_ai_random_insertion battleship 
 
+(** [printer_battleship_error (t, error)] is the string representation
+    of [t, error] for the printer in [assert_equals]
+    when dealing with [Battleship Failure] variants. *)
 let printer_battleship_error (t, error) = 
   match error with 
   | BoundsError -> "bounds error"
@@ -192,6 +254,10 @@ let printer_battleship_error (t, error) =
   | OutOfShips -> "out of ships"
   | NonexistShip -> "non exist ship : should never be raised"
 
+(** [make_battleship_bounds_test name battleship_failure  battleship error_type]
+    is the Ounit2 test with name [name] that asserts the equality of
+    [error_type] and [battleship] with the [battleship_failure] action
+    that must be a failure.. *)
 let make_battleship_bounds_test 
     name
     battleship_failure 
@@ -204,13 +270,231 @@ let make_battleship_bounds_test
            battleship_failure)
     )
 
+(** [make_battleship_damage_test
+    name
+    player
+    battleship
+    damage_coords_lst 
+    battleship_status_lst 
+    all_sunk] is the OUnit2 test named [name] that asserts the equality 
+    of the [player]'s [battleship] dictionary with locations changed
+    by [damage_coords_lst] with [battleship_status_lst]. 
+    It also asserts the equality of [all_sunk] and whether
+    all the ships are damaged in the updated battleship for [player]. *) 
+let make_battleship_damage_test
+    name
+    player
+    battleship
+    damage_coords_lst 
+    battleship_status_lst 
+    all_sunk = 
+  name >:: (fun _ ->
+      let final_damage_list = 
+        List.fold_left 
+          (fun bship coord -> change_to_damage coord bship) 
+          (battleship |> get_player_dict (choose_player player))
+          (damage_coords_lst) in 
+      let cleaned_final_list = 
+        final_damage_list
+        |> List.map (fun (_, t) -> t)
+        |> List.flatten in
+      assert_equal 
+        ~cmp: cmp_set_like_lists
+        battleship_status_lst cleaned_final_list;
+      assert_equal
+        ~printer: string_of_bool
+        all_sunk (check_all_ships_damaged final_damage_list);
+    )
 
 let state_tests = [
 
 ]
 
-
 let battleship_tests = [
+  make_battleship_damage_test
+    "multiple inserts and samages and one with different players"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (5, 8) Left Destroyer (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (0, 4) Right Cruiser (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(9, 2); (9, 3);(9, 4); (9, 5); (9, 6)]
+    [(5, 8, Undamaged); (4, 8, Undamaged); (3, 8, Undamaged);
+     (9, 2, Damaged); (9, 3, Damaged);
+     (9, 4, Damaged); (9, 5, Damaged);
+     (9, 6, Damaged)]
+    false;
+  make_battleship_damage_test
+    "multiple inserts and samages and one with different players"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure")
+     |> insert_ship (5, 8) Left Destroyer (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure"))
+    [(6, 3); (6, 2); (6, 1); (6, 0); (9, 4); (9, 6)]
+    [(6, 3, Damaged); (6, 2, Damaged);
+     (6, 1, Damaged); (6, 0, Damaged);]
+    true;
+  make_battleship_damage_test
+    "multiple inserts and samages and one ships sunk player 1"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure"))
+    [(6, 3); (6, 2); (6, 1); (6, 0); (9, 4); (9, 6)]
+    [(6, 3, Damaged); (6, 2, Damaged);
+     (6, 1, Damaged); (6, 0, Damaged);
+     (9, 2, Undamaged); (9, 3, Undamaged);
+     (9, 4, Damaged); (9, 5, Undamaged);
+     (9, 6, Damaged)]
+    false;
+  make_battleship_damage_test
+    "multiple inserts and samages and one ships sunk player 2"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure"))
+    [(6, 3); (6, 2); (6, 1); (6, 0); (9, 4); (9, 6)]
+    [(6, 3, Damaged); (6, 2, Damaged);
+     (6, 1, Damaged); (6, 0, Damaged);
+     (9, 2, Undamaged); (9, 3, Undamaged);
+     (9, 4, Damaged); (9, 5, Undamaged);
+     (9, 6, Damaged)]
+    false;
+  make_battleship_damage_test
+    "multiple inserts and samages but no ship sunk player 1"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure"))
+    [(6, 3); (6, 0); (9, 4); (9, 6)]
+    [(6, 3, Damaged); (6, 2, Undamaged);
+     (6, 1, Undamaged); (6, 0, Damaged);
+     (9, 2, Undamaged); (9, 3, Undamaged);
+     (9, 4, Damaged); (9, 5, Undamaged);
+     (9, 6, Damaged)]
+    false;
+  make_battleship_damage_test
+    "multiple inserts and samages but no ship sunk player 2"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") 
+     |> insert_ship (9, 2) Down AircraftCarrier (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure"))
+    [(6, 3); (6, 0); (9, 4); (9, 6)]
+    [(6, 3, Damaged); (6, 2, Undamaged);
+     (6, 1, Undamaged); (6, 0, Damaged);
+     (9, 2, Undamaged); (9, 3, Undamaged);
+     (9, 4, Damaged); (9, 5, Undamaged);
+     (9, 6, Damaged)]
+    false;
+  make_battleship_damage_test
+    "insert player 1 and damage part of ship"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(6, 3); (6, 0)]
+    [(6, 3, Damaged); (6, 2, Undamaged);
+     (6, 1, Undamaged); (6, 0, Damaged)]
+    false;
+  make_battleship_damage_test
+    "insert player 2 and damage part of ship"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(6, 3); (6, 1); (6, 0)]
+    [(6, 3, Damaged); (6, 2, Undamaged);
+     (6, 1, Damaged); (6, 0, Damaged)]
+    false;
+  make_battleship_damage_test
+    "insert player 2 and damage entire ship"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(6, 3); (6, 2); (6, 1); (6, 0)]
+    [(6, 3, Damaged); (6, 2, Damaged);
+     (6, 1, Damaged); (6, 0, Damaged)]
+    true;
+  make_battleship_damage_test
+    "insert player 1 and damage entire ship"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(6, 3); (6, 2); (6, 1); (6, 0)]
+    [(6, 3, Damaged); (6, 2, Damaged);
+     (6, 1, Damaged); (6, 0, Damaged)]
+    true;
+  make_battleship_damage_test
+    "insert player 1"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(2, 3); (4, 4)]
+    [(6, 3, Undamaged); (6, 2, Undamaged);
+     (6, 1, Undamaged); (6, 0, Undamaged)]
+    false;
+  make_battleship_damage_test
+    "insert player 2"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(2, 3); (4, 4)]
+    [(6, 3, Undamaged); (6, 2, Undamaged);
+     (6, 1, Undamaged); (6, 0, Undamaged)]
+    false;
+  make_battleship_damage_test
+    "opposite player"
+    true
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player false) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(2, 3); (4, 4)]
+    [] (* player 1 no ships placed *)
+    true;(*vacuously true *)
+  make_battleship_damage_test
+    "opposite player"
+    false
+    (Battleship.empty
+     |> insert_ship (6, 3) Up Battleship (choose_player true) 
+     |> (function | Success b -> b | Failure _ -> failwith "failure") )
+    [(2, 3); (4, 4)]
+    [] (* player 2 no ships placed *)
+    true;(*vacuously true *)
+  make_battleship_damage_test
+    "empty player 1"
+    true
+    Battleship.empty 
+    [(2, 3); (4, 4)]
+    []
+    true;(*vacuously true *)
+  make_battleship_damage_test
+    "empty player 2"
+    false
+    Battleship.empty 
+    [(2, 3); (4, 4)]
+    []
+    true; (*vacuously true *)
   make_battleship_test
     "empty"
     Battleship.empty
