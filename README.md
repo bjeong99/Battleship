@@ -31,7 +31,7 @@
 - displays victory message when one player's ships all sunk
 
 ### Targeting Phase (Upgraded):
-- Powerups to target ships
+#### Powerups to target ships
 - Cannonballs to target multiple squares
 - Possibility of targeting multiple times per turn
 - ...
@@ -55,7 +55,7 @@
 ### Main:
 - This is view in the MVC paradigm
 - run actual game and read from terminal
-- when first start off game, it will call "place_ship "player 1"" and will only change to "player 2" when the player one inventory is empty and when player inputs "finish"
+- when first start off game, it will call "place_ship "player 1" and will only change to "player 2" when the player one inventory is empty and when player inputs "finish"
 
 ### Battleship:
 - everything constant

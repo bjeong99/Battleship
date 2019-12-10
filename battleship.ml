@@ -399,8 +399,6 @@ let check_ship_can_be_removed ship player game =
    | Player2 ->
      game.player_2_ships_placed)
   |> List.map ship_to_string
-  |> (fun lst -> print_endline "Contents of list"; lst)
-  |> (fun lst -> lst |> List.map print_endline |> ignore; lst)
   |> List.mem ship
 
 let remove_ship_helper ship player game = 
@@ -460,10 +458,7 @@ let choose_target pairs_list =
   let () = Random.self_init () in 
   pairs_list 
   |> List.length 
-  |> (fun len -> print_endline "Length of pairs"; len |> string_of_int |> print_endline; len)
   |> Random.int 
-  |> (fun i -> print_endline "Random integer"; i |> string_of_int |> print_endline; i)
-  (*|> (fun l -> l - 1) *)
   |> List.nth pairs_list
 
 let create_pairs m n = 
@@ -501,8 +496,6 @@ let randomly_laydown_ships_helper player game =
   | Player1 ->
     let () = Random.self_init () in 
     let remaining_ships_num = List.length game.player_1_ships_remaining in 
-    print_endline "Remaining ships to place Player 1";
-    remaining_ships_num |> string_of_int |> print_endline;
     let random_ship = List.nth (game.player_1_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
     let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
     let pairs_list = create_pairs c_ROWS c_COLS in 
@@ -689,15 +682,3 @@ let get_ship_coordinates x y dict =
   | Some n -> change_ship_dict_to_damaged n dict []
   | None -> (dict, [])
 
-let m = 
-  [|[|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |]; 
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-  |]
