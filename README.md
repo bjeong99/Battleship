@@ -7,7 +7,7 @@
 
 ### AI:
 - Player can choose if they want to play against another human or an AI
-- Three difficulties if AI is chosen - easy, medium, hard and insane
+- Four difficulties if AI is chosen - easy, medium, hard and insane
 
 ### Ship Placement Phase:
 - Player can place ship where they want
@@ -32,9 +32,9 @@
 
 ### Targeting Phase (Upgraded):
 #### Powerups to target ships
-- Cannonballs to target multiple squares
-- Possibility of targeting multiple times per turn
-- ...
+- Square shot to target multiple squares
+- Rehit to target on multiple turns
+- Instakill to sink a ship immediately if hit
 
 ## Design Philosophy (Module Layout):
 
