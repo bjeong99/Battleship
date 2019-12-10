@@ -6,6 +6,7 @@ let c_RANDOM = "random"
 let c_QUIT = "quit"
 let c_USE = "use"
 let c_POWERUPS = "powerups"
+let c_AT = "at"
 
 (* affirmative constants *)
 let c_YES = "yes"
@@ -169,12 +170,14 @@ let parse_lay_down_ship x y direction ship =
   then Valid (int_of_string x_digit - 1, int_of_string y - 1, direction, ship)
   else InvalidCommand
 
-let parse_use x y use powerup =
+let parse_use x y at use powerup =
   let x_digit = char_to_coord x in 
   if process_number x_digit &&
      process_number y &&
+     (int_of_string y > 0) &&
      use = c_USE &&
-     process_powerup powerup
+     process_powerup powerup &&
+     at = c_AT
   then Use (int_of_string x_digit - 1, int_of_string y - 1, powerup)
   else InvalidCommand
 
@@ -228,7 +231,7 @@ let cleaned_to_command str_lst =
   | remove :: ship :: [] ->
     parse_remove remove ship
   | use :: p :: at :: x :: y :: [] ->
-    parse_use x y use p
+    parse_use x y at use p
   | word :: [] ->
     parse_single_word word
   | _ -> InvalidCommand

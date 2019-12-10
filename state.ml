@@ -1,5 +1,3 @@
-open Hard_ai
-
 (* constants relevant to board size *)
 let c_ROWS = 10
 let c_COLS = 10
@@ -29,6 +27,8 @@ type powerup_type =
   | SquareHit
   | ReHit
   | InstaKill
+
+open Hard_ai
 
 (* [t] is represents the state of the game 
    [current_player]  is the player to make a move this turn
@@ -66,6 +66,10 @@ type t = {
   player_2_inv : string list;
 
 }
+
+type powerup_status = 
+  | Usable of t * bool * bool
+  | Unusable 
 
 let init_state player_1 player_2 player_1_pregame player_2_pregame = {
   current_player = player_1;
@@ -549,6 +553,14 @@ let powerup_to_string powerup =
   | ReHit -> "rehit"
   | InstaKill -> "instakill"
 
+(** [string_to_powerup str ] converts [str] to the appropriate
+    powerup_type [powerup] to the . *)
+let string_to_powerup str = 
+  if str = "squarehit" then SquareHit 
+  else if str = "rehit" then ReHit
+  else if str = "instakill" then InstaKill
+  else failwith "Violates preconditions: must be parsed as a proper powerup"
+
 (** [powerups_to_string_list player state] stores all the powerups that a 
     [player] has in [state] in a list. *)
 let powerups_to_string_list  player state = 
@@ -565,16 +577,111 @@ let print_powerups player state =
 let get_player_powerups player state =
   match player with
   | Player1 -> state.player_1_inv
-  | Player2 -> state.player_2_inv
+  | Player2 -> state.player_2_inv 
 
-let update_powerup_state player state powerup_type =
+let (>>=) f (x, y) player powerup_type m  =
+  match m with
+  | Success (state, hit_miss_status, ship_sunk) -> 
+    f (x, y) player powerup_type state hit_miss_status ship_sunk 
+  | Failure _ as f -> f
+
+let (<<>>) m = 
+  match m with 
+  | Success (state, hit_miss_status, ship_sunk) -> 
+    Usable (state, hit_miss_status, ship_sunk)
+  | Failure _ -> Unusable
+
+let monad_target (x, y) player powerup_type state hit_miss_status ship_sunk =  
+  match target_ship (x, y) player state with
+  | Success (state', hit', sunk') ->
+    Success (state', (hit' || hit_miss_status), ship_sunk || sunk')
+  | Failure _ as f-> f
+
+let update_state_powerups (x, y) player powerup_type state hit sunk = 
   match player with 
-  |Player1 ->
-    let newlist = List.filter (fun pow -> (pow <> powerup_type)) state.player_1_inv in 
-    {state with player_1_inv = newlist}
-  |Player2 ->
-    let newlist = List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in 
-    {state with player_2_inv = newlist}
+  | Player1 ->  
+    let newlist = 
+      List.filter (fun pow -> (pow <> powerup_type)) state.player_1_inv in 
+    Success ({state with player_1_inv = newlist}, hit, sunk)
+  | Player2 ->
+    let newlist = 
+      List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in 
+    Success ({state with player_2_inv = newlist}, hit, sunk)
+
+let process_square_hits x y player state powerup_type = 
+  target_ship (x, y) player state
+  |> (>>=) monad_target (x + 1, y) player powerup_type
+  |> (>>=) monad_target (x, y + 1) player powerup_type
+  |> (>>=) monad_target (x + 1, y + 1) player powerup_type
+  |> (>>=) update_state_powerups (x, y) player powerup_type
+  |> (<<>>)
+
+let process_rehit x y player state powerup_type =
+  target_ship (x, y) player state
+  |> (>>=) update_state_powerups (x, y) player powerup_type
+  |> (<<>>) 
+
+let get_ship_dict x y player state = 
+  match player with 
+  | Player1 ->
+    state.player_2_ship_dict 
+  | Player2 -> 
+    state.player_1_ship_dict
+
+let make_ship_sink x y player state = 
+  let ship_dict = get_ship_dict x y player state in 
+  Battleship.get_ship_coordinates x y ship_dict
+
+let process_instakill x y player state powerup_type = 
+  match target_ship (x, y) player state with 
+  | Success (new_state, hit, sunk) -> 
+    if hit then 
+      let new_player_dict, ship_coords =
+        make_ship_sink x y player state in begin
+        let hit_ship_coords = 
+          List.map (fun (x, y) -> (x, y, Hit)) ship_coords in
+        match player with
+        | Player1 ->
+          let newlist = 
+            List.filter (fun pow -> (pow <> powerup_type)) state.player_1_inv in
+          Usable ({state with 
+                   player_2_ship_dict = 
+                     new_player_dict;
+                   player_1_grid_guesses = hit_ship_coords @ state.player_1_grid_guesses;
+                   player_1_inv = newlist}, true, true)
+        | Player2 ->
+          let newlist = 
+            List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in
+          Usable({state with 
+                  player_1_ship_dict = 
+                    new_player_dict;
+                  player_2_grid_guesses = hit_ship_coords @ state.player_2_grid_guesses;
+                  player_2_inv = newlist}, true, true)
+      end
+    else
+      Usable (new_state, hit, sunk)
+  | Failure _ -> Unusable 
+
+let update_powerup_state x y player state powerup_type =
+  match player with 
+  | Player1  -> begin
+      if powerup_type = "squarehit" then 
+        process_square_hits x y player state powerup_type
+      else if powerup_type = "rehit" then 
+        process_rehit x y player state powerup_type
+      else if powerup_type = "instakill" then 
+        process_instakill x y player state powerup_type
+      else failwith "powerup must be parsed into three strings"
+    end
+  | Player2 -> begin
+      if powerup_type = "squarehit" then 
+        process_square_hits x y player state powerup_type
+      else if powerup_type = "rehit" then 
+        process_rehit x y player state powerup_type
+      else if powerup_type = "instakill" then 
+        process_instakill x y player state powerup_type
+      else failwith "powerup must be parsed into three strings"
+    end
 
 (* | Player2 ->
    if Battleship.check_cell_occupied (x, y) state.player_1_ship_dict

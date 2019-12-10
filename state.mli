@@ -40,6 +40,12 @@ type powerup_type =
   | ReHit
   | InstaKill
 
+(* [powerup_status] represents whehter a powerup can be used [USable] or no
+   [Unusable]. *)
+type powerup_status = 
+  | Usable of t * bool * bool
+  | Unusable
+
 (* [RI]: Player2 is the only player that can be an AI player. *)
 (* [AF]: In any array [arr], [arr.(row).(column)] represents the real world
    point [(column + 1, row + 1)] *)
@@ -198,3 +204,6 @@ val update_powerup_state : player -> t -> string -> t
 
     Requires: Must be called after target for the given AI. *)
 val get_surrounding_positions : int * int -> t -> (int * int) list
+val string_to_powerup : string -> powerup_type
+
+val update_powerup_state : int -> int -> player -> t -> string -> powerup_status

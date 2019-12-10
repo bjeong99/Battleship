@@ -281,7 +281,6 @@ let rec incr_y_range x y_0 y_1 arr =
 let rec iter_vert_ship x y_0 y_1 target_arr = 
   if y_0 = y_1 
   then begin
-    print_endline "in iter vert ship";
     if target_arr.(x - 1).(y_0 - 1) = Untargeted 
     then true
     else false
@@ -295,7 +294,6 @@ let rec iter_vert_ship x y_0 y_1 target_arr =
 let rec iter_horiz_ship x_0 x_1 y target_arr = 
   if x_0 = x_1 
   then begin
-    print_endline "in iter horiz ship";
     if target_arr.(x_0 - 1).(y - 1) = Untargeted 
     then true
     else false
@@ -309,7 +307,6 @@ let rec iter_horiz_ship x_0 x_1 y target_arr =
 let rec iter_vert_col col start_y ship_length target_arr counts_arr =
   if start_y + ship_length - 1 > c_ROW then counts_arr
   else begin
-    print_endline "in iter horiz col ";
     if iter_vert_ship col start_y (start_y + ship_length - 1) target_arr 
     then 
       let () = incr_y_range col start_y (start_y + ship_length - 1) counts_arr in 
@@ -320,7 +317,6 @@ let rec iter_vert_col col start_y ship_length target_arr counts_arr =
 let rec iter_horiz_row row start_x ship_length target_arr counts_arr =
   if start_x + ship_length  - 1 > c_COL then counts_arr
   else begin
-    print_endline "in iter horiz row ";
     if iter_horiz_ship start_x (start_x + ship_length - 1) row target_arr 
     then 
       let () = incr_x_range start_x (start_x + ship_length - 1) row counts_arr in 
@@ -353,33 +349,54 @@ let iter_counts target_arr =
     (empty_counts_array ())
     c_SHIP_LENGTHS
 
+let make_upper_right () = 
+  (ref 1, ref 1)
+
+let make_matrix_start () matrix =   
+  ref matrix.(0).(0)
+
 let get_max_index_matrix matrix = 
-  let x = ref 0 in 
-  let y = ref 0 in 
-  let value = ref matrix.(0).(0) in 
+  let x, y = make_upper_right () in 
+  let value = make_matrix_start () matrix in 
   for i = 1 to c_COL do 
     for j = 1 to c_ROW do 
-      if matrix.(i - 1).(j - 1) > !value then (value := matrix.(i - 1).(j - 1); !value |> string_of_int |> print_endline; x := i; y := j;)
+      if matrix.(i - 1).(j - 1) > !value 
+      then (value := matrix.(i - 1).(j - 1); x := i; y := j)
     done
   done; 
+  assert (!x > 0 && !x <= 10 && !y > 0 && !y <= 10);
+  (*assert (!value <> 0);*)
   (!x, !y)
 
-let prob_target locs_targeted = 
+let get_random locs_remaining = 
+  let length = List.length locs_remaining in 
+  let random = Random.int length in 
+  List.nth locs_remaining random
+
+let repeat_choose_random locs_targeted locs_remaining chosen_target = 
+  if List.mem chosen_target locs_targeted
+  then get_random locs_remaining 
+  else chosen_target
+
+let prob_target locs_targeted locs_remaining = 
   locs_targeted 
   |> update_target_array (empty_target_array ())
-  |> (fun arr -> print_endline "counting"; arr)
   |> iter_counts 
   |> (fun arr -> print_endline "This is the counts array"; arr)
   |> (fun arr -> print_int_matrix arr; arr)
   |> get_max_index_matrix
+  |> repeat_choose_random locs_targeted locs_remaining
 
 let string_point (x, y) = "(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")"
 let print_points lst = List.map (fun p -> print_endline (string_point p)) lst
 
 let insane_target ai = 
   print_endline "locations targeted";
-  print_points ai.locations_targeted;
-  let chosen_target = prob_target ai.locations_targeted in 
+  print_points ai.locations_targeted |> ignore;
+  let chosen_target = prob_target ai.locations_targeted ai.remaining_coords in 
+  print_endline "\nThis is the chosen target: \n";
+  chosen_target |> string_point |> print_endline;
+  print_newline ();
   (chosen_target, 
    {ai with
     remaining_coords = 
