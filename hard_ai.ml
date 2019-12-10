@@ -9,6 +9,14 @@ type target_direction =
   | Top
   | Bottom
 
+(* CITATION
+
+   The algorithm idea and strategy comes
+   from http://datagenetics.com/blog/december32011/index.html 
+
+   We fully ackwoledge the direct influence of the strategy on
+   our code. *)
+
 type t = {
   guess_phase : bool;
 

@@ -27,6 +27,7 @@
    minimizing the amount of targets needed to sunk ship
 - If Insane AI is playing, it will probabilistically "hunt" for ships,
    and then switch to the Hard AI algorithm when it finds a ship hit
+   We attribute the insane strategy to http://datagenetics.com/blog/december32011/index.html
 
 - displays victory message when one player's ships all sunk
 
