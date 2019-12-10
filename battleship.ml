@@ -54,7 +54,6 @@ type action =
   | Success of t
   | Failure of t * error
 
-
 let starter_ship_list = [
   AircraftCarrier ;
   Battleship ;
@@ -138,28 +137,10 @@ let string_to_direction str =
   else if strlow = "down" then Down
   else failwith "str not one of four cases"
 
-(*
-let rec get_ship_list dict acc_key= 
-  match dict with 
-  | [] -> acc_key
-  | (ship, lst) :: t -> get_ship_list t (ship :: acc_key)
-
-
-let rec get_coord x y lst = 
-  match lst with 
-  | [] -> false
-  | (a, b, _) :: t -> if a = x && b = y then true
-    else get_coord x y t
-
-let rec get_ship_from_coord x y dict = 
-  match dict with 
-  | [] -> raise NonexistShip 
-  | (k, lst) :: t -> if (get_coord x y lst) then k else get_ship_from_coord x y t
-*)
-
 let rec generate_num_lst start length operator acc = 
   if length = 0 then List.rev acc
-  else generate_num_lst ((operator) start 1) (length - 1) operator (start :: acc)
+  else 
+    generate_num_lst ((operator) start 1) (length - 1) operator (start :: acc)
 
 let generate_pos_list (x, y) length direction = 
   match direction with
@@ -232,12 +213,15 @@ let insert_ship (x, y) direction ship player dict =
     if check_bounds (x, y) (ship_length ship) direction 
     then begin
       if check_ship_placed ship player dict then 
-        begin if check_unoccupied (x, y) (ship_length ship) direction dict.player_1_ships
+        begin if check_unoccupied 
+            (x, y) (ship_length ship) direction dict.player_1_ships
           then Success 
               {dict with
                player_1_ships_placed = ship :: dict.player_1_ships_placed;
-               player_1_ships = insert (ship_to_string ship) (x, y) direction dict.player_1_ships;
-               player_1_ships_remaining = List.filter (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
+               player_1_ships = insert 
+                   (ship_to_string ship) (x, y) direction dict.player_1_ships;
+               player_1_ships_remaining = List.filter 
+                   (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
           else Failure (dict, OccupiedTile)
         end
       else Failure (dict, OutOfShips)
@@ -248,12 +232,15 @@ let insert_ship (x, y) direction ship player dict =
     then 
       begin
         if check_ship_placed ship player dict then 
-          begin if check_unoccupied (x, y) (ship_length ship) direction dict.player_2_ships
+          begin if check_unoccupied 
+              (x, y) (ship_length ship) direction dict.player_2_ships
             then Success 
                 {dict with 
                  player_2_ships_placed = ship :: dict.player_2_ships_placed;
-                 player_2_ships = insert (ship_to_string ship) (x, y) direction dict.player_2_ships;
-                 player_2_ships_remaining = List.filter (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
+                 player_2_ships = insert 
+                     (ship_to_string ship) (x, y) direction dict.player_2_ships;
+                 player_2_ships_remaining = List.filter 
+                     (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
             else Failure (dict, OccupiedTile)
           end
         else Failure (dict, OutOfShips)
@@ -268,25 +255,12 @@ let rec make_grid dict grid =
   match dict with
   | [] -> grid
   | (string, list_of_ints) :: t ->
-    let first_letter = String.get (String.uppercase_ascii string) 0 |> Char.escaped in
+    let first_letter = String.get (String.uppercase_ascii string) 0 
+                       |> Char.escaped in
     List.map (fun (x, y, z) -> grid.(y).(x) <- 
                  (if z = Undamaged then (first_letter ^ " ") else Emoji.fire)) 
       list_of_ints |> ignore;
     make_grid t grid
-
-(* OLD VERSION: NUMBERS DISPLAYED IN OPPOSITE ORDER
-   let rec make_grid dict grid = 
-   (* TODO  add powerups*)
-   match dict with
-   | [] -> grid
-   | (string, list_of_ints) :: t ->
-    let first_letter = String.get (String.uppercase_ascii string) 0 |> Char.escaped in
-    List.map (fun (x, y, z) -> grid.(y).(x) <- 
-                 (if z = Undamaged then (first_letter ^ " ") else Emoji.fire)) 
-      list_of_ints |> ignore;
-    make_grid t grid
-
-*)
 
 let string_of_matrix matrix = 
   let init_list = ref [] in 
@@ -298,19 +272,6 @@ let string_of_matrix matrix =
     init_list := !init_list @ [!s];
   done;
   !init_list
-
-(* OLDER INCORRECT VERSION: PUTS ROWS AT BOTTOM ON TOP
-   let string_of_matrix matrix = 
-   let init_list = ref [] in 
-   for i = 0 to (c_ROWS - 1) do
-    let s = ref "" in 
-    for j = 0 to (c_COLS - 1) do 
-      s := !s ^ " " ^ matrix.(i).(j) 
-    done;
-    init_list := !s :: !init_list;
-   done;
-   !init_list
-*)
 
 let combine_boards lst1 lst2 = 
   let rec combine_helper lst1 lst2 acc =  
@@ -368,13 +329,13 @@ let rec change_damage_list (x, y) list acc =
     if a = x && b = y then change_damage_list (x, y) t ((a, b, Damaged) :: acc)
     else change_damage_list (x, y) t ((a, b, status) :: acc)
 
-
 let change_to_damage (x, y) dict = 
   let rec change_to_damage_helper (x, y) dict acc = 
     match dict with
     | [] -> acc
     | (ship, lst) :: t ->
-      change_to_damage_helper (x, y) t ((ship, change_damage_list (x, y) lst []) :: acc)
+      change_to_damage_helper 
+        (x, y) t ((ship, change_damage_list (x, y) lst []) :: acc)
   in change_to_damage_helper (x, y) dict []
 
 
@@ -409,14 +370,16 @@ let remove_ship_helper ship player game =
       game with
       player_1_ships = remove ship game.player_1_ships;
       player_1_ships_placed = 
-        game.player_1_ships_placed |> List.filter (fun elt -> elt <> string_to_ship ship);
+        game.player_1_ships_placed 
+        |> List.filter (fun elt -> elt <> string_to_ship ship);
       player_1_ships_remaining =
         (string_to_ship ship) :: game.player_1_ships_remaining}
   | Player2 -> {
       game with
       player_2_ships = remove ship game.player_2_ships;
       player_2_ships_placed = 
-        game.player_2_ships_placed |> List.filter (fun elt -> elt <> string_to_ship ship);
+        game.player_2_ships_placed 
+        |> List.filter (fun elt -> elt <> string_to_ship ship);
       player_2_ships_remaining =
         (string_to_ship ship) :: game.player_2_ships_remaining}
 
@@ -460,10 +423,13 @@ let choose_target pairs_list =
   let () = Random.self_init () in 
   pairs_list 
   |> List.length 
-  |> (fun len -> print_endline "Length of pairs"; len |> string_of_int |> print_endline; len)
+  |> (fun len -> print_endline "Length of pairs"; len 
+                                                  |> string_of_int 
+                                                  |> print_endline; len)
   |> Random.int 
-  |> (fun i -> print_endline "Random integer"; i |> string_of_int |> print_endline; i)
-  (*|> (fun l -> l - 1) *)
+  |> (fun i -> print_endline "Random integer"; i 
+                                               |> string_of_int 
+                                               |> print_endline; i)
   |> List.nth pairs_list
 
 let create_pairs m n = 
@@ -503,16 +469,22 @@ let randomly_laydown_ships_helper player game =
     let remaining_ships_num = List.length game.player_1_ships_remaining in 
     print_endline "Remaining ships to place Player 1";
     remaining_ships_num |> string_of_int |> print_endline;
-    let random_ship = List.nth (game.player_1_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
-    let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
+    let random_ship = List.nth (game.player_1_ships_remaining 
+                                |> List.map ship_type_to_ship_name) 
+        (Random.int remaining_ships_num) in 
+    let random_direction = List.nth direction_list 
+        (Random.int (List.length direction_list)) in 
     let pairs_list = create_pairs c_ROWS c_COLS in 
     let random_position = choose_target pairs_list in 
     (random_position, random_direction, random_ship)
   | Player2 -> 
     let () = Random.self_init () in 
     let remaining_ships_num = List.length game.player_2_ships_remaining in 
-    let random_ship = List.nth (game.player_2_ships_remaining |> List.map ship_type_to_ship_name) (Random.int remaining_ships_num) in 
-    let random_direction = List.nth direction_list (Random.int (List.length direction_list)) in 
+    let random_ship = List.nth (game.player_2_ships_remaining 
+                                |> List.map ship_type_to_ship_name) 
+        (Random.int remaining_ships_num) in 
+    let random_direction = List.nth direction_list 
+        (Random.int (List.length direction_list)) in 
     let pairs_list = create_pairs c_ROWS c_COLS in 
     let random_position = choose_target pairs_list in 
     (random_position, random_direction, random_ship)
@@ -676,7 +648,8 @@ let rec change_ship_dict_to_damaged ship_name dict acc =
   | [] -> (List.rev acc , [])
   | (name, coord_lst) :: t ->
     if name = ship_name then 
-      let new_coord_lst = List.map (fun (x, y, _) -> (x, y, Damaged)) coord_lst in 
+      let new_coord_lst = List.map (fun (x, y, _) -> 
+          (x, y, Damaged)) coord_lst in 
       (acc @ ((name, new_coord_lst) :: t), 
        (List.map (fun (x, y, _) -> (x, y)) new_coord_lst)
       )
@@ -688,16 +661,3 @@ let get_ship_coordinates x y dict =
   match ship_name with
   | Some n -> change_ship_dict_to_damaged n dict []
   | None -> (dict, [])
-
-let m = 
-  [|[|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |]; 
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-    [|"f"; "s"; "f"; "s"; "f"; "s";"f"; "s";"f"; "s";"f"; "s"|];
-  |]
