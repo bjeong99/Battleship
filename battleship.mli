@@ -244,3 +244,5 @@ val powerup_to_string : powerup_type -> string
 val check_coord_in_powerups : int -> int -> player -> t -> bool
 
 val get_powerup_name : int -> int -> player -> t -> string
+
+val square_check_bounds : int*int -> bool

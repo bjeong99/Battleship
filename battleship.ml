@@ -196,7 +196,7 @@ let check_bounds (x, y) length direction =
   | Down -> 
     x >= 0 && x < 10 && y >= 0 && y + length - 1 < 10
 
-let square_check_bounds_down (x,y) =
+let square_check_bounds (x,y) =
   check_bounds (x,y) 2 Down &&
   check_bounds (x,y) 2 Right  
 
