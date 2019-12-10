@@ -428,8 +428,7 @@ let state_tests = [
        (Battleship.empty |> get_player_dict (choose_player false))
     )
     target_hard_ai;
-  (*CANNOT TEST BECAUSE INSANE AI eventaually eliminates positions
-    that are not ships *)
+  (*Modified INsane so that a oocation can always be targeted *)
   make_state_ai_target_test
     "empty insane AI target"
     (State.initialize_ai true false 

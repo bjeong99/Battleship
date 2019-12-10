@@ -663,6 +663,31 @@ let get_powerup_name x y player battleship =
     battleship.player_2_powerups 
     |> get_powerup_name_helper x y
 
+let rec point_to_ship_name x y player_list = 
+  match player_list with 
+  | [] -> None
+  | (ship_name, pos_lst) :: t ->
+    let coord_lst = List.map (fun (x, y, status) -> (x, y)) pos_lst in 
+    if List.mem (x, y) coord_lst then Some ship_name
+    else point_to_ship_name x y t
+
+let rec change_ship_dict_to_damaged ship_name dict acc = 
+  match dict with 
+  | [] -> (List.rev acc , [])
+  | (name, coord_lst) :: t ->
+    if name = ship_name then 
+      let new_coord_lst = List.map (fun (x, y, _) -> (x, y, Damaged)) coord_lst in 
+      (acc @ ((name, new_coord_lst) :: t), 
+       (List.map (fun (x, y, _) -> (x, y)) new_coord_lst)
+      )
+    else 
+      change_ship_dict_to_damaged ship_name t ((name, coord_lst) :: acc)
+
+let get_ship_coordinates x y dict = 
+  let ship_name = point_to_ship_name x y dict in 
+  match ship_name with
+  | Some n -> change_ship_dict_to_damaged n dict []
+  | None -> (dict, [])
 
 let m = 
   [|[|"h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l"; "h"; "l" |]; 
