@@ -1,4 +1,4 @@
-MODULES= battleship_powerup new_state human hard_ai bad_ai battleship command state main author
+MODULES= hard_ai battleship command state main author
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)

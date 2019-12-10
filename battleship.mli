@@ -151,7 +151,7 @@ val string_of_dict : list_t -> string list
 val change_damage_list : int * int -> (int * int * status) list -> 
   (int * int * status) list -> (int * int * status) list
 
-(** [cahnge_to_damage (x, y) dict] changes the status at coordinate [(x, y)] in
+(** [change_to_damage (x, y) dict] changes the status at coordinate [(x, y)] in
     dict to Damaged. *)
 val change_to_damage : int * int -> list_t -> list_t
 
