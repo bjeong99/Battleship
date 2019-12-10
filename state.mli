@@ -189,3 +189,12 @@ val print_powerups : player -> t -> unit
 val get_player_powerups : player -> t -> string list
 
 val update_powerup_state : player -> t -> string -> t
+
+(** [get_surrounding_positions (x, y) state] are the surrounding positions
+    on the board around the targeted location [(x, y)] in the current [state] 
+    after [(x, y)] has been targeted and marked on pos targeted. 
+
+    Requires: [(x, y)] have [x] and [y] in the 0 and 9 inclusive. 
+
+    Requires: Must be called after target for the given AI. *)
+val get_surrounding_positions : int * int -> t -> (int * int) list

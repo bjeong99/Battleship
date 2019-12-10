@@ -41,6 +41,9 @@ let make_difficulty_test name str expected =
 let str_list_to_str lst = 
   List.fold_left (fun init s -> init ^ " " ^ s) "" lst
 
+let int_list_to_str lst = 
+  List.fold_left (fun init s -> init ^ "  " ^ (string_of_int (fst s)) ^ ", " ^ 
+                                (string_of_int (snd s))) "" lst
 (**[make_battleship_test 
     name 
     battleship
@@ -306,6 +309,40 @@ let make_battleship_damage_test
         ~printer: string_of_bool
         all_sunk (check_all_ships_damaged final_damage_list);
     )
+(** [get_option_value action] returns a tuple that is an easier representation 
+    of State.action. The first two boolean values represent if a ship has been 
+    hit and if the ship has been sunk, and the third bool value represents 
+    whether the action is a Sucess or a Failure. *)
+let get_option_value (action: State.action) = 
+  match action with 
+  | Success (_, b1, b2) -> (b1, b2, true)
+  | Failure (_, error) -> (false, false, false)
+
+(** [make_state_player_test name state player_bool player_win] is an OUnit2 test
+    named [name] that compares the various player functions in State with the 
+    expected [player_bool] and [player_win] values. *)
+let make_state_player_test
+    name
+    state 
+    player_bool 
+    player_win 
+    target_action
+    (x, y)= 
+  name >:: (fun _ ->
+      let updated_state = match target_ship (x, y) (bool_to_player player_bool) 
+                                  state with 
+      | Success (t, _ , _) -> t 
+      | Failure (t, _) -> failwith "failure" in 
+      assert_equal 
+        ~printer: string_of_bool player_bool (get_current_player state);
+      assert_equal 
+        ~printer: string_of_bool player_win 
+        (check_victory (bool_to_player player_bool) updated_state);
+      assert_equal target_action 
+        (get_option_value (target_ship (x, y) (bool_to_player player_bool) 
+                             state));
+    )
+
 
 (** [make_state_test 
     name  
@@ -372,6 +409,11 @@ let make_state_ai_target_test
         test_result
     )
 
+(** [make_state_ai_surrounding name state x y surrounding_pairs_lst] is a 
+    OUnit test named [name] that asserts the quality of the 
+    get_surrounding_positions function that is used by the medium and hard AI. It 
+    enforces the quality of the AI in a given [state] that it can find the next
+    positions to target once hitting a ship at cordinates [x] and [y]. *)
 let make_state_ai_surrounding
     name
     state
@@ -380,6 +422,7 @@ let make_state_ai_surrounding
     surrounding_pairs_lst= 
   name >:: (fun _ -> 
       assert_equal 
+        ~printer: int_list_to_str
         ~cmp: cmp_set_like_lists
         surrounding_pairs_lst
         (get_surrounding_positions (x, y) state);
@@ -407,7 +450,62 @@ let empty_player1_dict =
 let empty_player2_dict = 
   Battleship.empty |> get_player_dict (choose_player false)
 
+let one_ship_in_dict = 
+  let insert_bs = insert_ship (5, 5) Right Destroyer Player1 Battleship.empty
+  in 
+  match insert_bs with 
+  | Success x -> get_player_dict (choose_player true) x
+  | _ -> failwith ""
+
+let initial_state = init_state true false empty_player1_dict empty_player2_dict
+
+let one_ship_in_dict_sunk = 
+  let init_state = init_state true false one_ship_in_dict one_ship_in_dict in
+  let rec loop_to_target n (x, y) updated_state = 
+    match n with 
+    | 0 -> updated_state
+    | _ -> 
+      match target_ship (x, y) Player1 updated_state with 
+      | Success (t, _, _) -> loop_to_target (n-1) (x + 1, y) t
+      | Failure (t, _) -> failwith "failure"
+  in 
+  loop_to_target 2 (6,5) init_state
+
+
+
 let state_tests = [
+  make_state_player_test
+    "init"
+    initial_state
+    true
+    true
+    (false, false, true)
+    (5,5);
+
+  make_state_player_test
+    "test update_player"
+    (update_player initial_state)
+    false
+    true
+    (false, false, true)
+    (5,5);
+
+  make_state_player_test
+    "test with non-empty"
+    (init_state true false one_ship_in_dict one_ship_in_dict)
+    true
+    false
+    (true, false, true)
+    (5,5);
+
+  make_state_player_test
+    "test with non_empty and all sunk"
+    one_ship_in_dict_sunk
+    true
+    true
+    (true, true, true)
+    (5,5);
+
   make_state_test 
     "empty state"
     (State.init_state true false 
@@ -425,6 +523,30 @@ let state_tests = [
        empty_player1_dict empty_player2_dict
     )
     target_ai;
+
+  make_state_ai_surrounding
+    "empty medium AI target"
+    (State.initialize_ai true false 
+       empty_player1_dict empty_player2_dict)
+    5
+    5
+    [];
+
+  make_state_ai_surrounding
+    "one ship medium/hard AI target hit"
+    (State.initialize_ai true false 
+       one_ship_in_dict empty_player2_dict)
+    6
+    6
+    [(6, 5);(6, 7);(5, 6);(7, 6)];
+
+  make_state_ai_surrounding
+    "one ship medium/hard AI target miss"
+    (State.initialize_ai true false 
+       one_ship_in_dict empty_player2_dict)
+    10
+    10
+    [];
 ]
 
 let battleship_tests = [
