@@ -348,13 +348,21 @@ let make_state_test
 
 let num_tiles = 100
 
-let rec repeatedly_target test_result n targeting_function state = 
-  if n = 0 then test_result 
+let board_pairs = create_pairs 10 10 
+
+let rec repeatedly_target test_result points_acc n targeting_function state = 
+  if n = 0 then 
+    test_result && 
+    cmp_set_like_lists points_acc points_acc &&
+    List.for_all (fun p -> List.mem p board_pairs) points_acc &&
+    List.length (points_acc) = num_tiles 
   else 
     let (x, y), new_state = targeting_function state in 
     let new_result = x >= 1 && x <= 10 && y >= 1 && y <= 10 in
     repeatedly_target 
-      (new_result && test_result) (n - 1) targeting_function new_state
+      (new_result && test_result) 
+      ((x, y) :: points_acc) 
+      (n - 1) targeting_function new_state
 
 (** [make_state_ai_target_test name state targeting_function] 
     is a OUnit test named [name] that asserts the equality of 
@@ -365,7 +373,7 @@ let make_state_ai_target_test
     state
     targeting_function = 
   let test_result = 
-    repeatedly_target true num_tiles targeting_function state in
+    repeatedly_target true [] num_tiles targeting_function state in
   name >:: (fun _ ->
       assert_bool 
         "You targeted a location off the board" 
@@ -406,6 +414,29 @@ let state_tests = [
        (Battleship.empty |> get_player_dict (choose_player false))
     )
     target_ai;
+  make_state_ai_target_test
+    "empty medium AI target"
+    (State.initialize_ai true false 
+       (Battleship.empty |> get_player_dict (choose_player true))
+       (Battleship.empty |> get_player_dict (choose_player false))
+    )
+    target_medium_ai;
+  make_state_ai_target_test
+    "empty hard AI target"
+    (State.initialize_ai true false 
+       (Battleship.empty |> get_player_dict (choose_player true))
+       (Battleship.empty |> get_player_dict (choose_player false))
+    )
+    target_hard_ai;
+  (* CANNOT TEST BECAUSE INSANE AI eventaually eliminates positions
+     that are not ships 
+     make_state_ai_target_test
+     "empty insane AI target"
+     (State.initialize_ai true false 
+       (Battleship.empty |> get_player_dict (choose_player true))
+       (Battleship.empty |> get_player_dict (choose_player false))
+     )
+     target_insane_ai; *)
 ]
 
 let battleship_tests = [
