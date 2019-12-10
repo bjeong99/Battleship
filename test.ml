@@ -372,6 +372,19 @@ let make_state_ai_target_test
         test_result
     )
 
+let make_state_ai_surrounding
+    name
+    state
+    x 
+    y 
+    surrounding_pairs_lst= 
+  name >:: (fun _ -> 
+      assert_equal 
+        ~cmp: cmp_set_like_lists
+        surrounding_pairs_lst
+        (get_surrounding_positions (x, y) state);
+    )
+
 let ocean_row = 
   " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
   " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
@@ -388,22 +401,28 @@ let no_guesses =
   [question_row; question_row; question_row; question_row; question_row;
    question_row; question_row; question_row; question_row; question_row]
 
+let empty_player1_dict = 
+  Battleship.empty |> get_player_dict (choose_player true)
+
+let empty_player2_dict = 
+  Battleship.empty |> get_player_dict (choose_player false)
+
 let state_tests = [
   make_state_test 
     "empty state"
     (State.init_state true false 
-       (Battleship.empty |> get_player_dict (choose_player true))
-       (Battleship.empty |> get_player_dict (choose_player false))
+       empty_player1_dict empty_player2_dict
     )
     ocean
     no_guesses
     ocean
     no_guesses;
+
+
   make_state_ai_target_test
     "empty easy AI target"
     (State.initialize_ai true false 
-       (Battleship.empty |> get_player_dict (choose_player true))
-       (Battleship.empty |> get_player_dict (choose_player false))
+       empty_player1_dict empty_player2_dict
     )
     target_ai;
 ]
