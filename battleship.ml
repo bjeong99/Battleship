@@ -274,6 +274,20 @@ let rec make_grid dict grid =
       list_of_ints |> ignore;
     make_grid t grid
 
+(* OLD VERSION: NUMBERS DISPLAYED IN OPPOSITE ORDER
+   let rec make_grid dict grid = 
+   (* TODO  add powerups*)
+   match dict with
+   | [] -> grid
+   | (string, list_of_ints) :: t ->
+    let first_letter = String.get (String.uppercase_ascii string) 0 |> Char.escaped in
+    List.map (fun (x, y, z) -> grid.(y).(x) <- 
+                 (if z = Undamaged then (first_letter ^ " ") else Emoji.fire)) 
+      list_of_ints |> ignore;
+    make_grid t grid
+
+*)
+
 let string_of_matrix matrix = 
   let init_list = ref [] in 
   for i = 0 to (c_ROWS - 1) do
@@ -281,9 +295,22 @@ let string_of_matrix matrix =
     for j = 0 to (c_COLS - 1) do 
       s := !s ^ " " ^ matrix.(i).(j) 
     done;
-    init_list := !s :: !init_list;
+    init_list := !init_list @ [!s];
   done;
   !init_list
+
+(* OLDER INCORRECT VERSION: PUTS ROWS AT BOTTOM ON TOP
+   let string_of_matrix matrix = 
+   let init_list = ref [] in 
+   for i = 0 to (c_ROWS - 1) do
+    let s = ref "" in 
+    for j = 0 to (c_COLS - 1) do 
+      s := !s ^ " " ^ matrix.(i).(j) 
+    done;
+    init_list := !s :: !init_list;
+   done;
+   !init_list
+*)
 
 let combine_boards lst1 lst2 = 
   let rec combine_helper lst1 lst2 acc =  

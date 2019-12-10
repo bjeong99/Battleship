@@ -269,8 +269,32 @@ let rec combine_helper lst1 lst2 acc digit =
   | h1 :: t1, h2 :: t2 -> 
     let digit_string = string_of_digit digit in 
     combine_helper t1 t2 
+      (acc @ [digit_string ^ " " ^ h1 ^ c_BOARD_SEP ^ digit_string  ^ " " ^ h2]) 
+      (digit + 1)
+
+(* OLD BROKEN VERSION< APPENDS END OF LIST AT BEGINNING TO REVERSE ORDER
+   (** [combine_helper lst1 lst2 acc digit] combines the two lists of strings
+    via the rule [[a1;b1;c1;...]] [[a2;b2;c2;...]] becomes
+    [[a1 ^ a2; b1 ^ b2; c1 ^ c2...]]. 
+
+    Requires : [lst1] and [lst2] are lists of player boards.
+    Requires: [digit] is between [0] and [10] inclusive. 
+
+    Raises : ["lst2 longer than lst1"] if [lst2] length is greater than length 
+    of[lst1]. 
+    Raises : ["lst1 longer than lst2"] if [lst1] length is greater than length 
+    of[lst2]. *)
+   let rec combine_helper lst1 lst2 acc digit =  
+   match lst1, lst2 with
+   | [], [] -> acc
+   | [], _ -> failwith "lst2 longer than lst1"
+   | _, [] -> failwith "lst1 longer than lst2"
+   | h1 :: t1, h2 :: t2 -> 
+    let digit_string = string_of_digit digit in 
+    combine_helper t1 t2 
       ((digit_string ^ " " ^ h1 ^ c_BOARD_SEP ^ digit_string  ^ " " ^ h2)::acc) 
       (digit - 1)
+*)
 
 let combine_boards lst1 lst2 = 
   let x_axis = 
@@ -278,7 +302,7 @@ let combine_boards lst1 lst2 =
     ^ c_BOARD_SEP 
     ^ "     A B C D E F G H I J" in
   let empty = "" in 
-  x_axis :: empty :: (combine_helper lst1 lst2 [] 10)
+  x_axis :: empty :: (combine_helper lst1 lst2 [] 1) (* last arg was 10, not 1 before *)
 
 let rec print_boards board_list = 
   match board_list with

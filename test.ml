@@ -3,6 +3,7 @@ open State
 open Battleship
 open Command
 open Hard_ai
+open Emoji
 
 (** [cmp_set_like_lists lst1 lst2] compares two lists to see whether
     they are equivalent set-like lists.  That means checking two things.
@@ -306,8 +307,105 @@ let make_battleship_damage_test
         all_sunk (check_all_ships_damaged final_damage_list);
     )
 
-let state_tests = [
+(** [make_state_test 
+    name  
+    state
+    expected_string]
+    is an ounit2 test named [name] that compares
+    the [state] with the [expected_string] output
+    for [player].  
+    It also asserts the equality of where the [player] has
+    guessed in [state] and *)
+let make_state_test 
+    name  
+    state
+    expected_placed_ships1
+    expected_guesses1
+    expected_placed_ships2
+    expected_guesses2 = 
+  name >:: (fun _ ->
+      assert_equal 
+        ~printer: 
+          (fun lst -> List.fold_left (fun init s -> init ^ "Start" ^ s) "" lst)
+        expected_placed_ships1
+        (string_of_player_dict (bool_to_player true) state);
+      assert_equal 
+        ~printer: 
+          (fun lst -> List.fold_left (fun init s -> init ^ "Start" ^ s) "" lst)
+        expected_guesses1
+        (string_of_guesses (bool_to_player true) state);
+      assert_equal 
+        ~printer: 
+          (fun lst -> List.fold_left (fun init s -> init ^ "Start" ^ s) "" lst)
+        expected_placed_ships2
+        (string_of_player_dict (bool_to_player false) state);
+      assert_equal 
+        ~printer: 
+          (fun lst -> List.fold_left (fun init s -> init ^ "Start" ^ s) "" lst)
+        expected_guesses2
+        (string_of_guesses (bool_to_player false) state);
+    )
 
+let num_tiles = 100
+
+let rec repeatedly_target test_result n targeting_function state = 
+  if n = 0 then test_result 
+  else 
+    let (x, y), new_state = targeting_function state in 
+    let new_result = x >= 1 && x <= 10 && y >= 1 && y <= 10 in
+    repeatedly_target 
+      (new_result && test_result) (n - 1) targeting_function new_state
+
+(** [make_state_ai_target_test name state targeting_function] 
+    is a OUnit test named [name] that asserts the equality of 
+    [targeting_function state] is always in board bounds
+    running over 100 trials. *)
+let make_state_ai_target_test 
+    name 
+    state
+    targeting_function = 
+  let test_result = 
+    repeatedly_target true num_tiles targeting_function state in
+  name >:: (fun _ ->
+      assert_bool 
+        "You targeted a location off the board" 
+        test_result
+    )
+
+let ocean_row = 
+  " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
+  " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
+  " " ^ water_wave ^ " " ^ water_wave 
+let ocean = 
+  [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row;
+   ocean_row; ocean_row; ocean_row; ocean_row; ocean_row]
+
+let question_row = 
+  " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ 
+  "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" 
+
+let no_guesses = 
+  [question_row; question_row; question_row; question_row; question_row;
+   question_row; question_row; question_row; question_row; question_row]
+
+let state_tests = [
+  make_state_test 
+    "empty state"
+    (State.init_state true false 
+       (Battleship.empty |> get_player_dict (choose_player true))
+       (Battleship.empty |> get_player_dict (choose_player false))
+    )
+    ocean
+    no_guesses
+    ocean
+    no_guesses;
+  make_state_ai_target_test
+    "empty easy AI target"
+    (State.initialize_ai true false 
+       (Battleship.empty |> get_player_dict (choose_player true))
+       (Battleship.empty |> get_player_dict (choose_player false))
+    )
+    target_ai;
 ]
 
 let battleship_tests = [
