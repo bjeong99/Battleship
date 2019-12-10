@@ -365,16 +365,27 @@ let get_max_index_matrix matrix =
     done
   done; 
   assert (!x > 0 && !x <= 10 && !y > 0 && !y <= 10);
-  assert (!value <> 0);
+  (*assert (!value <> 0);*)
   (!x, !y)
 
-let prob_target locs_targeted = 
+let get_random locs_remaining = 
+  let length = List.length locs_remaining in 
+  let random = Random.int length in 
+  List.nth locs_remaining random
+
+let repeat_choose_random locs_targeted locs_remaining chosen_target = 
+  if List.mem chosen_target locs_targeted
+  then get_random locs_remaining 
+  else chosen_target
+
+let prob_target locs_targeted locs_remaining = 
   locs_targeted 
   |> update_target_array (empty_target_array ())
   |> iter_counts 
   |> (fun arr -> print_endline "This is the counts array"; arr)
   |> (fun arr -> print_int_matrix arr; arr)
   |> get_max_index_matrix
+  |> repeat_choose_random locs_targeted locs_remaining
 
 let string_point (x, y) = "(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")"
 let print_points lst = List.map (fun p -> print_endline (string_point p)) lst
@@ -382,7 +393,7 @@ let print_points lst = List.map (fun p -> print_endline (string_point p)) lst
 let insane_target ai = 
   print_endline "locations targeted";
   print_points ai.locations_targeted |> ignore;
-  let chosen_target = prob_target ai.locations_targeted in 
+  let chosen_target = prob_target ai.locations_targeted ai.remaining_coords in 
   print_endline "\nThis is the chosen target: \n";
   chosen_target |> string_point |> print_endline;
   print_newline ();

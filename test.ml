@@ -428,15 +428,15 @@ let state_tests = [
        (Battleship.empty |> get_player_dict (choose_player false))
     )
     target_hard_ai;
-  (* CANNOT TEST BECAUSE INSANE AI eventaually eliminates positions
-     that are not ships 
-     make_state_ai_target_test
-     "empty insane AI target"
-     (State.initialize_ai true false 
+  (*CANNOT TEST BECAUSE INSANE AI eventaually eliminates positions
+    that are not ships *)
+  make_state_ai_target_test
+    "empty insane AI target"
+    (State.initialize_ai true false 
        (Battleship.empty |> get_player_dict (choose_player true))
        (Battleship.empty |> get_player_dict (choose_player false))
-     )
-     target_insane_ai; *)
+    )
+    target_insane_ai;
 ]
 
 let battleship_tests = [
