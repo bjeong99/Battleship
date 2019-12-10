@@ -784,12 +784,16 @@ let print_targeting_rules color =
 (* poweups start  *)
 
 let use_squarehit x y player state battleship ai_status diff ai =
+  (* let newstate = (State.update_powerup_state (State.bool_to_player player) state "squarehit") in 
+     let plyr = player in 
+     let color = plyr in  *)
   failwith ""
-
 let use_rehit x y player state battleship ai_status diff ai =
+  (* let newstate = State.update_powerup_state (State.bool_to_player player) state "rehit" in  *)
   failwith ""
 
 let use_instakill x y player state battleship ai_status diff ai =
+  (* let newstate = State.update_powerup_state (State.bool_to_player player) state "instakill" in  *)
   failwith ""
 
 let use_powerups pow x y player state battleship ai_status diff ai =
@@ -946,7 +950,7 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
       (if check_coord_in_powerups x y (choose_player player) battleship 
        then 
          let power_name = get_powerup_name x y (choose_player player) battleship in 
-         State.add_powerup (bool_to_player player) state' power_name 
+         State.add_powerup (bool_to_player player) state' power_name
        else state') in
     after_move_message ();
     print_boards_side_by_side player new_state;
@@ -989,6 +993,35 @@ let rec target state_option battleship ai_status diff ai =
   else 
     handle_target_result state battleship ai_status diff ai player
 
+
+and use_powerups pow x y player state battleship ai_status diff ai =
+  match pow with 
+  |"squarehit" ->
+    (* ANSITerminal.(print_string [green]
+                    "\nUsing SQUAREHIT! Boom! \n");  *)
+    if List.mem pow (State.get_player_powerups (State.bool_to_player player) state) 
+    && Battleship.square_check_bounds (x,y) then 
+      let newstate = (State.update_powerup_state (State.bool_to_player player) state "squarehit") in 
+      legal_target target x y player newstate battleship ai_status diff ai;
+      (* legal_target target x (y + 1) player newstate battleship ai_status diff ai;
+         legal_target target (x + 1) y player newstate battleship ai_status diff ai;
+         legal_target target (x + 1) (y + 1) player newstate battleship ai_status diff ai; *)
+    else target (Some state) battleship ai_status diff ai
+
+  | "rehit" ->
+    (* ANSITerminal.(print_string [green]
+                    "\nUsing REHIT! Boom! \n"); use_rehit x y player state battleship ai_status diff ai *)
+    if List.mem pow (State.get_player_powerups (State.bool_to_player player) state) 
+    then let newstate = (State.update_powerup_state (State.bool_to_player player) state "rehit") in 
+      legal_target target x y player newstate battleship ai_status diff ai (*add rehit*)
+    else target (Some state) battleship ai_status diff ai
+  |"instakill" ->
+    if List.mem pow (State.get_player_powerups (State.bool_to_player player) state) 
+    then let newstate = (State.update_powerup_state (State.bool_to_player player) state "instakill") in 
+      legal_target target x y player newstate battleship ai_status diff ai (*add instakill*)
+    else target (Some state) battleship ai_status diff ai
+
+  | _ -> failwith "not a valid power-up :("
 (*
 begin
     match () |> read_line |> parse with
@@ -1043,6 +1076,12 @@ and handle_target_result state battleship ai_status diff ai player =
 
 
 (* ########### In Game ############# *)
+
+(* type main_state = 
+   | ContinueGame 
+    of (State.t option) * Battleship.t * bool * ai_difficulty * Hard_ai.t
+   | VictoryGame
+   | EndGame *)
 
 (* ########### End Game ############# *)
 

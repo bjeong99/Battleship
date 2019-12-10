@@ -185,3 +185,7 @@ val get_current_player : t -> bool
 (** [print_powerups player state] prints all the powerups the [player] owns in
     the specific [state]. *)
 val print_powerups : player -> t -> unit
+
+val get_player_powerups : player -> t -> string list
+
+val update_powerup_state : player -> t -> string -> t
