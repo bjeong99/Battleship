@@ -50,7 +50,8 @@ let credits () =
 let print_welcome_message () = 
   ANSITerminal.(print_string [green]
                   "\n\nWelcome to the 3110 Battleship Game.\n");
-  ANSITerminal.scroll 18;
+  ANSITerminal.scroll 20;
+  Unix.sleep 2;
   () |> credits |> print_endline;
   Unix.sleep 2;
   ANSITerminal.erase Screen;
@@ -151,10 +152,10 @@ type check_ai =
 let rec choose_ai () =
   print_ai_message ();
   match () |> read_line |> parse with
-  | YesNo true -> AIContinue true
-  | YesNo false -> AIContinue false
-  | Quit -> AIQuit
-  | _ -> print_ai_failure_message (); choose_ai ()
+  | YesNo true -> ANSITerminal.erase Screen; AIContinue true
+  | YesNo false -> ANSITerminal.erase Screen; AIContinue false
+  | Quit -> ANSITerminal.erase Screen; AIQuit
+  | _ -> ANSITerminal.erase Screen; print_ai_failure_message (); choose_ai ()
 
 (** [determine_ai_status state battleship ai_status diff ai] is 
     the game state with an AI or not, e.g. if an AI is wanted
@@ -162,9 +163,15 @@ let rec choose_ai () =
     and if the player wants to quit, then [EndGame]. *)
 let determine_ai_status state battleship ai_status diff ai = 
   match choose_ai () with
-  | AIContinue true -> ContinueGame (state, battleship, true, diff, ai)
-  | AIContinue false -> ContinueGame (state, battleship, false, diff, ai)
-  | AIQuit -> EndGame
+  | AIContinue true -> 
+    ANSITerminal.erase Screen; 
+    ContinueGame (state, battleship, true, diff, ai)
+  | AIContinue false -> 
+    ANSITerminal.erase Screen; 
+    ContinueGame (state, battleship, false, diff, ai)
+  | AIQuit -> 
+    ANSITerminal.erase Screen; 
+    EndGame
 
 (** [choose_difficulty ()] is the difficulty the player wants for the AI.*)
 let rec choose_difficulty () = 
@@ -175,7 +182,7 @@ let rec choose_difficulty () =
   | Hard -> AIHard
   | Insane -> AIInsane
   | InvalidDifficulty -> 
-    print_difficulty_error (); choose_difficulty ()
+    ANSITerminal.erase Screen;  print_difficulty_error (); choose_difficulty ()
 
 (** [determine_ai_difficulty state battleship ai_status diff ai] is the game
     with the difficulty of Ai the player wants, e.g.
@@ -195,7 +202,7 @@ let determine_ai_difficulty state battleship ai_status diff ai =
       ContinueGame (state, battleship, ai_status, AIMedium, ai)
     | AIHard -> ANSITerminal.erase Screen;
       ContinueGame (state, battleship, ai_status, AIHard, ai)
-    | AIInsane -> 
+    | AIInsane -> ANSITerminal.erase Screen;
       ContinueGame (state, battleship, ai_status, AIInsane, ai)
   end
 
@@ -247,6 +254,7 @@ let rec delay input =
     which player's color used, e.g. red for player 1 and 
     blue for player2.  *)
 let print_lay_down_ships_phase color = 
+  ANSITerminal.erase Screen; 
   ANSITerminal.(print_string [color]
                   "\n\nPlease lay down your ships on the map. \n");
   ANSITerminal.(print_string [color] 
@@ -258,8 +266,10 @@ The coordinates represent the head of the ship and the direction of the ship"
 (** [print_quit ()] has the effect
     printing a quit message.   *)
 let print_quit () = 
+  ANSITerminal.erase Screen; 
   ANSITerminal.(print_string [green]
-                  "\n\nQuitting game.\n")
+                  "\n\nQuitting game.\n");
+  ANSITerminal.scroll 20
 
 (** [print_syntax_error ()] has the effect
     printing a syntax error message.   *)
@@ -509,12 +519,14 @@ let rec place_player2_ships state battleship ai_status diff ai =
 (** [print_entering_targeting_phase state battleship ai_status diff ai] has
     the effect of telling the player they are entering the targeting phase.  *)
 let print_entering_targeting_phase state battleship ai_status diff ai = 
+  ANSITerminal.erase Screen; 
   ANSITerminal.(print_string [green]
                   "We are entering the targeting phase of the game.\n");
   ANSITerminal.(print_string [green]
                   "Player 1 will target first and alternate with player 2.\n");
   ANSITerminal.(print_string [green]
-                  "The game continues until victory or a player quits. \n\n");              
+                  "The game continues until victory or a player quits. \n\n");   
+  Unix.sleep 1;           
   ContinueGame (state, battleship, ai_status, diff, ai)
 
 (** [build_in_game_state state battleship ai_status diff ai] creates
@@ -980,7 +992,7 @@ let finish_game game_status =
 
 let () = 
   ()
-  |> (fun () -> ANSITerminal.resize 125 25)
+  |> (fun () -> ANSITerminal.resize 125 40)
   |> (fun () -> ANSITerminal.erase Screen)
   |> print_welcome_message 
   |> initialize_main 
@@ -1000,3 +1012,4 @@ let () =
   |> finish_game
 
 (* ########### Running Game ############# *)
+

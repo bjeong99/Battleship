@@ -384,7 +384,7 @@ let remove_ship_helper ship player game =
 let remove_ship ship player game = 
   if not (check_ship_can_be_removed ship player game) then game
   else 
-    let () = print_endline ship in
+    (*let () = print_endline ship in*)
     remove_ship_helper ship player game
 
 let check_all_ships_damaged dict = 
@@ -421,13 +421,7 @@ let choose_target pairs_list =
   let () = Random.self_init () in 
   pairs_list 
   |> List.length 
-  |> (fun len -> print_endline "Length of pairs"; len 
-                                                  |> string_of_int 
-                                                  |> print_endline; len)
   |> Random.int 
-  |> (fun i -> print_endline "Random integer"; i 
-                                               |> string_of_int 
-                                               |> print_endline; i)
   |> List.nth pairs_list
 
 let create_pairs m n = 
@@ -465,8 +459,6 @@ let randomly_laydown_ships_helper player game =
   | Player1 ->
     let () = Random.self_init () in 
     let remaining_ships_num = List.length game.player_1_ships_remaining in 
-    print_endline "Remaining ships to place Player 1";
-    remaining_ships_num |> string_of_int |> print_endline;
     let random_ship = List.nth (game.player_1_ships_remaining 
                                 |> List.map ship_type_to_ship_name) 
         (Random.int remaining_ships_num) in 
