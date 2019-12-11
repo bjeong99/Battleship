@@ -1,5 +1,8 @@
 type point = int * int
 
+(* [t] represents a hard Ai or insane Ai
+   where [guess_phase] is either smart or random
+   [insane] is [true] iff insane. *)
 type t = {
   guess_phase : bool;
 
@@ -25,12 +28,6 @@ val initialize_hard_ai : t
     for smart targeting are empty or all bounds are all true,
     false otherwise. *)
 val all_bounds_or_all_lists : t -> bool
-
-(*
-(** [get_target_horizontal ai] is [true] iff the horizontal targetinbg phase
-    is being used.*)
-val get_target_horizontal : t -> bool
-*)
 
 (** [get_insane_phase ai] is the targeting phase the [ai] is in, either
     the insane or guess type. *)
@@ -59,13 +56,6 @@ val smart_target : t -> (point * t)
     potentially updated. 
     Requires: Use after AI in smart mode misses. *)
 val update_smart_after_miss : t -> t
-
-(*
-(** [smart_update_neighbors ai p] is the new ai with 
-    additional coordinates to target.
-    Requires: can only use when a ship has been hit and not sunk yet. *)
-val smart_update_neighbors : t -> point -> t
-*)
 
 (** [update_smart_ai_after_hit ai p] is the new ai with 
     additional coordinates to target after the point [p] with a ship was hit.
