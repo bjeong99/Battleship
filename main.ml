@@ -853,73 +853,172 @@ let rec target state_option battleship ai_status diff ai =
   else 
     handle_target_result state battleship ai_status diff ai player
 
+(** [handle_squarehit_use 
+    hit_result player state battleship ai_status diff ai string_opp_player] 
+    is the resulf or using a squarehit successfully for [player] 
+    in [state]. *)
+and handle_squarehit_use 
+    hit_result player state battleship ai_status diff ai string_opp_player = 
+  match hit_result with 
+  | Usable (new_state, hit, sunk) ->
+    after_move_message ();
+    print_boards_side_by_side player new_state;
+    print_sunk_hit_message hit sunk;
+    if check_victory (bool_to_player player) new_state 
+    then let () = print_winner player ai_status in VictoryGame
+    else
+      let () = delay () in
+      ANSITerminal.
+        (print_string [green] 
+           ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+      target (Some (new_state |> update_player)) battleship ai_status diff ai (* square hit used succesfully so player ends turn) *)
+  | Unusable ->
+    print_square_hit_cannot_use ();
+    target (Some state) battleship ai_status diff ai
+
+(** [and handle_squarehit 
+    pow x y player state battleship ai_status diff ai string_opp_player]
+    is the result of using an instakill [pow] for
+    [player] in [state].  *)
+and handle_squarehit 
+    pow x y player state battleship ai_status diff ai string_opp_player = 
+  if List.mem pow (get_player_powerups (bool_to_player player) state) (*&& square_check_bounds (x,y) *)
+  then let () = ANSITerminal.(print_string [green] 
+                                "\nUsing SQUAREHIT! Boom! \n") in
+    let squarehit_result = 
+      (update_powerup_state x y (bool_to_player player) state "squarehit") in 
+    handle_squarehit_use 
+      squarehit_result player state battleship ai_status diff ai string_opp_player
+  else target (Some state) battleship ai_status diff ai (* No power up used  because does notnhave square hit*)
+
+(** [handle_rehit_use 
+    hit_result player state battleship ai_status diff ai string_opp_player] 
+    is the resulf or using a squarehit successfully for [player] 
+    in [state]. *)
+and handle_rehit_use 
+    hit_result player state battleship ai_status diff ai string_opp_player = 
+  match hit_result with 
+  | Usable (new_state, hit, sunk) ->
+    after_move_message ();
+    print_boards_side_by_side player new_state;
+    print_sunk_hit_message hit sunk;
+    if check_victory (bool_to_player player) new_state 
+    then let () = print_winner player ai_status in VictoryGame
+    else 
+      target (Some (new_state)) battleship ai_status diff ai (* rehit used succesfully, so player gets a secomnd attack ) *)
+  | Unusable ->
+    print_rehit_cannot_use ();
+    target (Some state) battleship ai_status diff ai
+
+(** [handle_rehit
+    pow x y player state battleship ai_status diff ai string_opp_player]
+    is the result of using an instakill [pow] for
+    [player] in [state].  *)
+and handle_rehit 
+    pow x y player state battleship ai_status diff ai string_opp_player = 
+  if List.mem pow (get_player_powerups (bool_to_player player) state) 
+  then 
+    let () = ANSITerminal.(print_string [green]
+                             "\nUsing REHIT! Boom! \n") in 
+    let rehit_result = 
+      (update_powerup_state x y (bool_to_player player) state "rehit") in 
+    handle_rehit_use 
+      rehit_result player state battleship ai_status diff ai string_opp_player
+  else target (Some state) battleship ai_status diff ai (* No power up used because does not have rehit*)
+
+(** [handle_instakill_use 
+    hit_result player state battleship ai_status diff ai string_opp_player] 
+    is the resulf or using a squarehit successfully for [player] 
+    in [state]. *)
+and handle_instakill_use 
+    hit_result player state battleship ai_status diff ai string_opp_player = 
+  match hit_result with 
+  | Usable (new_state, hit, sunk) ->
+    after_move_message ();
+    print_boards_side_by_side player new_state;
+    print_sunk_hit_message hit sunk;
+    if check_victory (bool_to_player player) new_state 
+    then let () = print_winner player ai_status in VictoryGame
+    else
+      let () = delay () in
+      ANSITerminal.
+        (print_string [green] 
+           ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+      target (Some (new_state |> update_player)) battleship ai_status diff ai (* instalkill used succesfully and so new player) *)
+  | Unusable ->
+    print_ikill_cannot_use ();
+    target (Some state) battleship ai_status diff ai
+
+(** [handle_instakill
+    pow x y player state battleship ai_status diff ai string_opp_player]
+    is the result of using an instakill [pow] for
+    [player] in [state].  *)
+and handle_instakill
+    pow x y player state battleship ai_status diff ai string_opp_player =
+  if List.mem pow (get_player_powerups (bool_to_player player) state) 
+  then 
+    let () = ANSITerminal.(print_string [green]
+                             "\nUsing Instakill! Boom! \n") in 
+    let ikill_result = 
+      (update_powerup_state x y (bool_to_player player) state "instakill") in 
+    handle_instakill_use 
+      ikill_result player state battleship ai_status diff ai string_opp_player
+  else target (Some state) battleship ai_status diff ai
+
 (** [use_powerups pow x y player state battleship ai_status diff ai] 
     is the application of using powerups for [player] 
-    at [x] [y] with power [pow] in [state]. *)
+    at [x] [y] with power [pow] in [state]. 
+
+    Raises: ["not a valid power-up :("] if the powerup is not one
+    of ["rehit", "instakill" or "squarehit"]. *)
 and use_powerups pow x y player state battleship ai_status diff ai =
   let string_opp_player =
     match player with
     | true -> "Player 2"
     | false -> "Player 1" in
   match pow with 
-  |"squarehit" -> begin  
-      if List.mem pow (get_player_powerups (bool_to_player player) state) (*&& square_check_bounds (x,y) *)
-      then 
-        let () = ANSITerminal.(print_string [green]
-                                 "\nUsing SQUAREHIT! Boom! \n") in
-        let squarehit_result = 
-          (update_powerup_state x y (bool_to_player player) state "squarehit") in begin
-          match squarehit_result with 
-          | Usable (new_state, hit, sunk) ->
-            after_move_message ();
-            print_boards_side_by_side player new_state;
-            print_sunk_hit_message hit sunk;
-            if check_victory (bool_to_player player) new_state 
-            then let () = print_winner player ai_status in VictoryGame
-            else
-              let () = delay () in
-              ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-              target 
-                (Some (new_state |> update_player)) battleship ai_status diff ai (* square hit used succesfully so player ends turn) *)
-          | Unusable ->
-            print_square_hit_cannot_use ();
-            target (Some state ) battleship ai_status diff ai(* No power up used because squarehit conditions violated*)
-        end
-      else target (Some state ) battleship ai_status diff ai (* No power up used  because does notnhave square hit*)
-    end
-  | "rehit" -> begin
-      if List.mem pow (get_player_powerups (bool_to_player player) state) 
-      then 
-        let () = ANSITerminal.(print_string [green]
-                                 "\nUsing REHIT! Boom! \n") in 
-        let rehit_result = 
-          (update_powerup_state x y (bool_to_player player) state "rehit") in begin
-          match rehit_result with 
-          | Usable (new_state, hit, sunk) ->
-            after_move_message ();
-            print_boards_side_by_side player new_state;
-            print_sunk_hit_message hit sunk;
-            if check_victory (bool_to_player player) new_state 
-            then let () = print_winner player ai_status in VictoryGame
-            else
-              let () = delay () in
-              ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
-              target 
-                (Some (new_state)) battleship ai_status diff ai (* rehit used succesfully, so player gets a secomnd attack ) *)
-          | Unusable ->
-            print_rehit_cannot_use ();
-            target (Some state) battleship ai_status diff ai(* No power up used because rehit conditions violated*)
-        end
-      else target (Some state) battleship ai_status diff ai (* No power up used because does not have rehit*)
-    end
+  |"squarehit" -> 
+    handle_squarehit
+      pow x y player state battleship ai_status diff ai string_opp_player 
+  | "rehit" -> 
+    handle_rehit 
+      pow x y player state battleship ai_status diff ai string_opp_player
   | "instakill" -> 
+    handle_instakill 
+      pow x y player state battleship ai_status diff ai string_opp_player
+  | _ -> failwith "not a valid power-up :("
+(* if List.mem pow (get_player_powerups (bool_to_player player) state) (*&& square_check_bounds (x,y) *)
+   then 
+   let () = ANSITerminal.(print_string [green]
+                           "\nUsing SQUAREHIT! Boom! \n") in
+   let squarehit_result = 
+    (update_powerup_state x y (bool_to_player player) state "squarehit") in begin
+    match squarehit_result with 
+    | Usable (new_state, hit, sunk) ->
+      after_move_message ();
+      print_boards_side_by_side player new_state;
+      print_sunk_hit_message hit sunk;
+      if check_victory (bool_to_player player) new_state 
+      then let () = print_winner player ai_status in VictoryGame
+      else
+        let () = delay () in
+        ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+        target 
+          (Some (new_state |> update_player)) battleship ai_status diff ai (* square hit used succesfully so player ends turn) *)
+    | Unusable ->
+      print_square_hit_cannot_use ();
+      target (Some state ) battleship ai_status diff ai(* No power up used because squarehit conditions violated*)
+   end
+   else target (Some state ) battleship ai_status diff ai (* No power up used  because does notnhave square hit*)
+   end *)
+(* begin
     if List.mem pow (get_player_powerups (bool_to_player player) state) 
     then 
       let () = ANSITerminal.(print_string [green]
-                               "\nUsing Instakill! Boom! \n") in 
-      let ikill_result = 
-        (update_powerup_state x y (bool_to_player player) state "instakill") in begin
-        match ikill_result with 
+                               "\nUsing REHIT! Boom! \n") in 
+      let rehit_result = 
+        (update_powerup_state x y (bool_to_player player) state "rehit") in begin
+        match rehit_result with 
         | Usable (new_state, hit, sunk) ->
           after_move_message ();
           print_boards_side_by_side player new_state;
@@ -930,13 +1029,36 @@ and use_powerups pow x y player state battleship ai_status diff ai =
             let () = delay () in
             ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
             target 
-              (Some (new_state |> update_player)) battleship ai_status diff ai (* instalkill used succesfully and so new player) *)
+              (Some (new_state)) battleship ai_status diff ai (* rehit used succesfully, so player gets a secomnd attack ) *)
         | Unusable ->
-          print_ikill_cannot_use ();
+          print_rehit_cannot_use ();
           target (Some state) battleship ai_status diff ai(* No power up used because rehit conditions violated*)
-      end (*add instakill*)
-    else target (Some state) battleship ai_status diff ai (*does not have instakill*)
-  | _ -> failwith "not a valid power-up :("
+      end
+    else target (Some state) battleship ai_status diff ai (* No power up used because does not have rehit*)
+   end *)
+(*if List.mem pow (get_player_powerups (bool_to_player player) state) 
+  then 
+  let () = ANSITerminal.(print_string [green]
+                           "\nUsing Instakill! Boom! \n") in 
+  let ikill_result = 
+    (update_powerup_state x y (bool_to_player player) state "instakill") in begin
+    match ikill_result with 
+    | Usable (new_state, hit, sunk) ->
+      after_move_message ();
+      print_boards_side_by_side player new_state;
+      print_sunk_hit_message hit sunk;
+      if check_victory (bool_to_player player) new_state 
+      then let () = print_winner player ai_status in VictoryGame
+      else
+        let () = delay () in
+        ANSITerminal.(print_string [green] ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+        target 
+          (Some (new_state |> update_player)) battleship ai_status diff ai (* instalkill used succesfully and so new player) *)
+    | Unusable ->
+      print_ikill_cannot_use ();
+      target (Some state) battleship ai_status diff ai(* No power up used because rehit conditions violated*)
+  end (*add instakill*)
+  else target (Some state) battleship ai_status diff ai *)(*does not have instakill*)
 
 (** [handle_target_result state battleship ai_status diff ai player]
     deals with a player command to target.  *)

@@ -170,6 +170,9 @@ let parse_lay_down_ship x y direction ship =
   then Valid (int_of_string x_digit - 1, int_of_string y - 1, direction, ship)
   else InvalidCommand
 
+(** [parse_use x y at use powerup] is [Use] pf the appropriate
+    coordinates shiftd from a 10 10 system to 9 9 system, and the [powerup]
+    otherwise [InvalidCommand]. *)
 let parse_use x y at use powerup =
   let x_digit = char_to_coord x in 
   if process_number x_digit &&
