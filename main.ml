@@ -747,7 +747,8 @@ let handle_succ
   let new_state = 
     (if check_coord_in_powerups x y (choose_player player) battleship 
      then 
-       let power_name = get_powerup_name x y (choose_player player) battleship in 
+       let 
+         power_name = get_powerup_name x y (choose_player player) battleship in 
        State.add_powerup (bool_to_player player) state' power_name
      else state') in
   after_move_message ();
@@ -770,7 +771,8 @@ let legal_target rec_func x y player state battleship ai_status diff ai =
     print_already_targeted (); 
     rec_func (Some new_state) battleship ai_status diff ai
   | State.Failure (new_state, OutOfBounds) ->
-    print_off_gameboard (); rec_func (Some new_state) battleship ai_status diff ai
+    print_off_gameboard (); 
+    rec_func (Some new_state) battleship ai_status diff ai
   | State.Success (state', ship_hit, ship_sunk) ->
     handle_succ rec_func x y player battleship state' ship_hit ship_sunk
       ai_status diff ai string_opp_player
@@ -888,7 +890,8 @@ and handle_squarehit
     let squarehit_result = 
       (update_powerup_state x y (bool_to_player player) state "squarehit") in 
     handle_squarehit_use 
-      squarehit_result player state battleship ai_status diff ai string_opp_player
+      squarehit_result player 
+      state battleship ai_status diff ai string_opp_player
   else target (Some state) battleship ai_status diff ai (* No power up used  because does notnhave square hit*)
 
 (** [handle_rehit_use 
