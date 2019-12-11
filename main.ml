@@ -254,7 +254,6 @@ let rec delay input =
     which player's color used, e.g. red for player 1 and 
     blue for player2.  *)
 let print_lay_down_ships_phase color = 
-  ANSITerminal.erase Screen; 
   ANSITerminal.(print_string [color]
                   "\n\nPlease lay down your ships on the map. \n");
   ANSITerminal.(print_string [color] 

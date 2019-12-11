@@ -37,6 +37,11 @@
 - Rehit to target on multiple turns
 - Instakill to sink a ship immediately if hit
 
+### GUI
+- used OCaml Graphics module to implement gui for battleship
+- only functionality to lay down ships randomly, no AI, no powerups
+- players 1 and 2 keep guessing until one of the players destroys all the others ships
+
 ## Design Philosophy (Module Layout):
 
 ### AI:
@@ -62,4 +67,9 @@
 - everything constant
 - ship locations
    - when inserting, check if Out of Bounds
+
+### Visual: 
+- independent of all the other modules
+- works with battleship
+- the visual model is both a model (for state) and a view
 
