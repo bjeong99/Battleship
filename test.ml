@@ -472,7 +472,7 @@ let empty_player2_dict =
   Battleship.empty |> get_player_dict (choose_player false)
 
 (** [one_ship_in_dict] returns a Battleship.list_t that contains only one ship.*)
-let one_ship_in_dict = 
+let one_ship_in_dict= 
   let insert_bs = insert_ship (5, 5) Right Destroyer Player1 Battleship.empty
   in 
   match insert_bs with 
@@ -485,13 +485,13 @@ let initial_state = init_state true false empty_player1_dict empty_player2_dict
 
 (** [one_ship_target_repeat] returns a state in which the one ship had been 
     repeatedly targeted except for one part of the ship. *)
-let one_ship_target_repeat n (x,y) = 
+let one_ship_target_repeat n (x,y) player = 
   let init_state = init_state true false one_ship_in_dict one_ship_in_dict in
   let rec loop_to_target n (x, y) updated_state = 
     match n with 
     | 0 -> updated_state
     | _ -> 
-      match target_ship (x, y) Player1 updated_state with 
+      match target_ship (x, y) player updated_state with 
       | Success (t, _, _) -> loop_to_target (n-1) (x + 1, y) t
       | Failure (t, _) -> failwith "failure"
   in 
@@ -524,7 +524,7 @@ let state_tests = [
 
   make_state_player_test
     "test with non_empty and one hit"
-    (one_ship_target_repeat 1 (6,5))
+    (one_ship_target_repeat 1 (6,5) Player1)
     true
     false
     (true, false,true)
@@ -532,7 +532,7 @@ let state_tests = [
 
   make_state_player_test
     "test with non_empty and all sunk"
-    (one_ship_target_repeat 2 (6,5))
+    (one_ship_target_repeat 2 (6,5) Player1)
     true
     true
     (true, true, true)
@@ -559,8 +559,20 @@ let state_tests = [
     no_guesses;
 
   make_state_test
+    "one ship for both players"
+    (State.init_state true false one_ship_in_dict one_ship_in_dict)
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses;
+
+  make_state_test
     "one ship hit once"
-    (one_ship_target_repeat 1 (5,5))
+    (one_ship_target_repeat 1 (5,5) Player1)
     [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
      " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
      ocean_row]
@@ -573,8 +585,8 @@ let state_tests = [
     no_guesses;
 
   make_state_test
-    "one ship hit once"
-    (one_ship_target_repeat 4 (5,5))
+    "one ship hit all"
+    (one_ship_target_repeat 4 (5,5) Player1)
     [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
      " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
      ocean_row]
@@ -585,6 +597,20 @@ let state_tests = [
      " 🌊 🌊 🌊 🌊 🌊 🔥 🔥 🔥 🌊 🌊"; ocean_row; ocean_row; ocean_row; 
      ocean_row]
     no_guesses;
+
+  make_state_test
+    "one ship hit all player2"
+    (one_ship_target_repeat 4 (5,5) Player2)
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 🔥 🔥 🔥 🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    [question_row; question_row; question_row; question_row; question_row; 
+     " ? ? ? ? ? X X X O ?"; question_row; question_row; question_row; 
+     question_row];    
 
   make_state_ai_target_test
     "empty easy AI target"
