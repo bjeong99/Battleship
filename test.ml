@@ -441,6 +441,28 @@ let make_state_ai_surrounding
         (get_surrounding_positions (x, y) state);
     )
 
+let make_state_powerup
+    name
+    state
+    player 
+    powerup_list_string
+    powerup_list=
+  name >:: (fun _ ->
+      assert_equal
+        ~printer: str_list_to_str
+        ~cmp: cmp_set_like_lists
+        powerup_list_string 
+        (get_player_powerups player state);
+      let rec powerup_string_to_type list acc = 
+        match list with 
+        | [] -> acc
+        | h :: t -> powerup_string_to_type t ((string_to_powerup h) :: acc) 
+      in 
+      assert_equal
+        ~cmp: cmp_set_like_lists
+        powerup_list (powerup_string_to_type powerup_list_string [])
+    )
+
 (** [ocean_row] is a string that represents a row in an empty board. *)
 let ocean_row = 
   " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
@@ -472,7 +494,7 @@ let empty_player2_dict =
   Battleship.empty |> get_player_dict (choose_player false)
 
 (** [one_ship_in_dict] returns a Battleship.list_t that contains only one ship.*)
-let one_ship_in_dict= 
+let one_ship_in_dict = 
   let insert_bs = insert_ship (5, 5) Right Destroyer Player1 Battleship.empty
   in 
   match insert_bs with 
@@ -665,6 +687,34 @@ let state_tests = [
        (Battleship.empty |> get_player_dict (choose_player false))
     )
     target_insane_ai;
+
+  make_state_powerup
+    "empty board 1"
+    (State.init_state true false empty_player1_dict empty_player2_dict)
+    Player1
+    []
+    [];
+
+  make_state_powerup
+    "empty board 2"
+    (State.init_state true false empty_player1_dict empty_player2_dict)
+    Player2
+    []
+    [];
+
+  make_state_powerup
+    "one powerup 1"
+    (add_powerup Player1 (State.init_state true false empty_player1_dict empty_player2_dict) "rehit")
+    Player1
+    ["rehit"]
+    [ReHit];
+
+  make_state_powerup
+    "one powerup 2"
+    (add_powerup Player1 (State.init_state true false empty_player1_dict empty_player2_dict) "rehit")
+    Player2
+    []
+    [];
 ]
 
 let battleship_tests = [
