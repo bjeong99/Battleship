@@ -22,14 +22,6 @@ type t = {
 
   insane : bool;
 
-  (*
-  target_horizontal : bool;
-  current_location : point option;
-  hit_coord : point option;
-  horizontal_points : point list;
-  vertical_points : point list;
-  *)
-
   remaining_coords : point list;
   locations_targeted : point list;
 
@@ -46,30 +38,26 @@ type t = {
   bottom_list : point list;
 }
 
-(* algorithm 
-
-   Once there us a hit, store the hit point in hit coord
-   Also, store neighboring points of the hit point in horiz and vert column
-   Actually create four lists: left, right, up, down
-   In order, with points closest to the hit point, go left, then right, then up, then down
-   if you 
-*)
-
-(** [get_guess phase ai] is the targeting phase the [ai] is in, either
-    the random or smart phase. *)
-
+(** [all_lists_empty ai] is [true] iff 
+    all directional targeting lists for smart
+    are empty. *)
 let all_lists_empty ai = 
   ai.left_list = [] &&
   ai.right_list = [] &&
   ai.top_list = [] &&
   ai.bottom_list = []
 
+(** [all_bounds_true a] is [true] iff
+    all direction bounds for smart ai are [true]. *)
 let all_bounds_true ai = 
   ai.hit_bottom_bound &&
   ai.hit_left_bound &&
   ai.hit_top_bound &&
   ai.hit_right_bound
 
+(** [all_bounds_or_all_lists a] is [true] iff
+    all direction bounds for smart ai are [true]
+    or all lists are empty. *)
 let all_bounds_or_all_lists ai = 
   all_lists_empty ai || all_bounds_true ai
 
@@ -80,21 +68,25 @@ let random_to_smart ai = {
   ai with guess_phase = false;
 }
 
+(** [change_left_bound ai] changes the left bound to [true]. *)
 let change_left_bound ai = {
   ai with
   hit_left_bound = true;
 }
 
+(** [change_right_bound ai] changes the right bound to [true]. *)
 let change_right_bound ai = {
   ai with 
   hit_right_bound = true;
 }
 
+(** [change_top_bound ai] changes the top bound to [true]. *)
 let change_top_bound ai = {
   ai with 
   hit_top_bound = true;
 }
 
+(** [change_bottom_bound ai] changes the bottom bound to [true]. *)
 let change_bottom_bound ai = {
   ai with 
   hit_bottom_bound = true;
@@ -116,26 +108,36 @@ let update_smart_after_miss ai =
     |> change_left_bound  
   else failwith "There are no other directions a miss hit could occur in"
 
+(** [generate_up hit_already (x, y) acc] generates a list of points
+    upwards from [(x, y)] as long as no points above [x][y] are [hit_already].*)
 let rec generate_up hit_already (x, y) acc = 
   if y < 1 then List.rev acc 
   else if List.mem (x, y) hit_already then List.rev acc 
   else generate_up hit_already (x, y - 1) ((x, y) :: acc)
 
+(** [generate_down hit_already (x, y) acc] generates a list of points
+    down from [(x, y)] as long as no points above [x][y] are [hit_already].*)
 let rec generate_down hit_already (x, y) acc = 
   if y > 10 then List.rev acc
   else if List.mem (x, y) hit_already then List.rev acc 
   else generate_down hit_already (x, y + 1) ((x, y) :: acc)
 
+(** [generate_right hit_already (x, y) acc] generates a list of points
+    right from [(x, y)] as long as no points above [x][y] are [hit_already].*)
 let rec generate_right hit_already (x, y) acc = 
   if x > 10 then List.rev acc
   else if List.mem (x, y) hit_already then List.rev acc 
   else generate_right hit_already (x + 1, y) ((x, y) :: acc)
 
+(** [generate_left hit_already (x, y) acc] generates a list of points
+    left from [(x, y)] as long as no points above [x][y] are [hit_already].*)
 let rec generate_left hit_already (x, y) acc = 
   if x < 1 then List.rev acc
   else if List.mem (x, y) hit_already then List.rev acc 
   else generate_left hit_already (x - 1, y) ((x, y) :: acc)
 
+(** [generate_left ai (x, y)] generates a list of points
+    for all the directions around [(x, y)]. *)
 let generate_lists ai (x, y) = 
   let hit_already = ai.locations_targeted in 
   { ai with
