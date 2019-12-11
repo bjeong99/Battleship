@@ -235,16 +235,29 @@ val randomly_laydown_ships : t -> (int * int) * string * string
     Requires: Apply on after all the ships for the player have been placed. *)
 val assign_powerups : player -> t -> t
 
+(** [print_power_ups p b] is the effect of printing the powerups
+    [p] can get form game data [b]. *)
 val print_power_ups : player -> t -> unit
 
-val string_of_matrix_2 : string array array -> string list
-
+(** [powerup_to_string p] the corrsponding string for the powerup [p]. *)
 val powerup_to_string : powerup_type -> string
 
+(** [check_coord_in_powerups x y p b] is [true] if [x][y]
+    is a location that holds a powerup for player [p] in game data [b]. *)
 val check_coord_in_powerups : int -> int -> player -> t -> bool
 
+(** [get_powerup_name x y p b] is the name of the powerup
+    at [x][y] for player [p] in game data [b]. *)
 val get_powerup_name : int -> int -> player -> t -> string
 
+(** [square_check_bounds (x, y)] is [true] iff 
+    the coordinate corepsonding to [x][y] lies on the board
+    and also, the square defined by a length unit two side 
+    going right adn down on the board is also on the board fully. *)
 val square_check_bounds : int*int -> bool
 
+(** [get_ship_coordinates x y l] is the corresponding 
+    new list [l] with all positions in [l] corresponding to the ship
+    at [x][y] damaged and also the pairs of positions corresponding to 
+    the ship given [x][y]. *)
 val get_ship_coordinates : int -> int -> list_t -> list_t * ((int * int) list)
