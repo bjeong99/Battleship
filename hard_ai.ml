@@ -167,40 +167,100 @@ let reset_bounds_and_lists ai = {
 let smart_to_random ai = 
   reset_bounds_and_lists ai
 
+(** [smart_target_left ai] is a pair of the new ai, with a coordinate 
+    targeted updated functionally, as well as the targeted coordinate itself.
+    Chooses in the leftward direction. 
+    Requires: can only use when a ship has been hit and not sunk yet.*)
+let smart_target_left ai = 
+  let target = List.hd ai.left_list in 
+  (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            left_list = 
+              List.filter (fun c -> c <> target) ai.left_list;})
+
+(** [smart_target_right ai] is a pair of the new ai, with a coordinate 
+    targeted updated functionally, as well as the targeted coordinate itself.
+    Chooses in the righward direction. 
+    Requires: can only use when a ship has been hit and not sunk yet.*)
+let smart_target_right ai = 
+  let target = List.hd ai.right_list in 
+  (target,
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            right_list = 
+              List.filter (fun c -> c <> target) ai.right_list;})
+
+(** [smart_target_up ai] is a pair of the new ai, with a coordinate 
+    targeted updated functionally, as well as the targeted coordinate itself.
+    Chooses in the upward direction. 
+    Requires: can only use when a ship has been hit and not sunk yet.*)
+let smart_target_up ai = 
+  let target =  List.hd ai.top_list in 
+  (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            top_list = 
+              List.filter (fun c -> c <> target) ai.top_list;})
+
+(** [smart_target_down ai] is a pair of the new ai, with a coordinate 
+    targeted updated functionally, as well as the targeted coordinate itself.
+    Chooses in the downward direction. 
+    Requires: can only use when a ship has been hit and not sunk yet.*)
+let smart_target_down ai = 
+  let target = List.hd ai.bottom_list in 
+  (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            bottom_list = 
+              List.filter (fun c -> c <> target) ai.bottom_list;})
+
 let smart_target ai =  
   if ai.left_list <> [] && (not ai.hit_left_bound) then 
-    let target = List.hd ai.left_list in 
-    (target, 
-     {ai with locations_targeted = target :: ai.locations_targeted;
-              remaining_coords = 
-                List.filter (fun c -> c <> target) ai.remaining_coords;
-              left_list = 
-                List.filter (fun c -> c <> target) ai.left_list;})
+    smart_target_left ai
   else if ai.right_list <> [] && (not ai.hit_right_bound) then 
-    let target = List.hd ai.right_list in 
-    (target,
-     {ai with locations_targeted = target :: ai.locations_targeted;
-              remaining_coords = 
-                List.filter (fun c -> c <> target) ai.remaining_coords;
-              right_list = 
-                List.filter (fun c -> c <> target) ai.right_list;})
-  else if ai.top_list <> [] && (not ai.hit_top_bound) then 
-    let target =  List.hd ai.top_list in 
-    (target, 
-     {ai with locations_targeted = target :: ai.locations_targeted;
-              remaining_coords = 
-                List.filter (fun c -> c <> target) ai.remaining_coords;
-              top_list = 
-                List.filter (fun c -> c <> target) ai.top_list;})
+    smart_target_right ai
+  else if ai.top_list <> [] && (not ai.hit_top_bound) then
+    smart_target_up ai
   else if ai.bottom_list <> [] && (not ai.hit_bottom_bound) then 
-    let target = List.hd ai.bottom_list in 
-    (target, 
-     {ai with locations_targeted = target :: ai.locations_targeted;
-              remaining_coords = 
-                List.filter (fun c -> c <> target) ai.remaining_coords;
-              bottom_list = 
-                List.filter (fun c -> c <> target) ai.bottom_list;})
+    smart_target_down ai
   else failwith "It is impossible to not be able to sink a ship in this scheme"
+(* let target = List.hd ai.left_list in 
+   (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+          remaining_coords = 
+            List.filter (fun c -> c <> target) ai.remaining_coords;
+          left_list = 
+            List.filter (fun c -> c <> target) ai.left_list;}) *)
+(* else if ai.right_list <> [] && (not ai.hit_right_bound) then 
+   let target = List.hd ai.right_list in 
+   (target,
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            right_list = 
+              List.filter (fun c -> c <> target) ai.right_list;})
+   else if ai.top_list <> [] && (not ai.hit_top_bound) then 
+   let target =  List.hd ai.top_list in 
+   (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            top_list = 
+              List.filter (fun c -> c <> target) ai.top_list;})
+   else if ai.bottom_list <> [] && (not ai.hit_bottom_bound) then 
+   let target = List.hd ai.bottom_list in 
+   (target, 
+   {ai with locations_targeted = target :: ai.locations_targeted;
+            remaining_coords = 
+              List.filter (fun c -> c <> target) ai.remaining_coords;
+            bottom_list = 
+              List.filter (fun c -> c <> target) ai.bottom_list;})
+   else failwith "It is impossible to not be able to sink a ship in this scheme" *)
 
 (** [choose_random_target remaining_coords] is a random
     coordinate pair from [remaining_coords]. 
