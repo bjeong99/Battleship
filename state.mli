@@ -192,9 +192,9 @@ val get_current_player : t -> bool
     the specific [state]. *)
 val print_powerups : player -> t -> unit
 
+(** [get_player_powerups p st] are the powerups that the player has
+    in a list form of strings. *)
 val get_player_powerups : player -> t -> string list
-
-val update_powerup_state : player -> t -> string -> t
 
 (** [get_surrounding_positions (x, y) state] are the surrounding positions
     on the board around the targeted location [(x, y)] in the current [state] 
@@ -204,6 +204,18 @@ val update_powerup_state : player -> t -> string -> t
 
     Requires: Must be called after target for the given AI. *)
 val get_surrounding_positions : int * int -> t -> (int * int) list
+
+(** [string_to_powerup s] is the corresponding powerup to [s]
+
+    Requires: [s] is one of ["instakill"], ["rehit"] or ["squarehit"]. *)
 val string_to_powerup : string -> powerup_type
 
-val update_powerup_state : int -> int -> player -> t -> string -> powerup_status
+(** [update_powerup_state x y p st pow] aupdates the state [st] for player [p]
+    when [p] uses powerup [pow] at [x] [y] and is [Usable st hit sunk] if 
+    the [pow] was used successfully or [Unusable] if not used successfully.
+
+    Requires: [pow] is in the powerup inventory of [p] in [st] . 
+    Raises: ["powerup must be parsed into three strings"]
+      if [pow] is not one o f["rehit", "squarehit" or "instakill"]. *)
+val update_powerup_state : 
+  int -> int -> player -> t -> string -> powerup_status

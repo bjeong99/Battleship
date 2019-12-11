@@ -423,7 +423,6 @@ let initialize_ai player_1 player_2 player_1_pregame player_2_pregame = {
   surrounding_positions = [];
   guess_phase = true;
   hard_ai = initialize_hard_ai;
-
   player_1_inv = [];
   player_2_inv = [];
 }
@@ -461,6 +460,24 @@ let target_hard_ai state =
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
 
+(** update_hard_smart_mode state ai ship_hit ship_sunk] updates the [ai]
+    in [state] when the [ai] is in smart mode to account for [ship_hit] and 
+    pship_sunk]. Works only for hard Ai.
+
+    Requires: [ai] is in smart target mode already. 
+    Raises: [A target cannot sink a ship, yet not hit a ship] if
+    [ship_hit] is [true] but [ship_sunk] is [false] or vice versa. *)
+let update_hard_smart_mode state ai ship_hit ship_sunk = 
+  if ship_hit && ship_sunk then 
+    let random_ai = smart_to_random ai in 
+    {state with hard_ai = random_ai}
+  else if ship_hit && (not ship_sunk) then state
+  else if (not ship_hit) && (not ship_sunk) then 
+    let new_smart_ai = update_smart_after_miss ai in 
+    {state with hard_ai = new_smart_ai}
+  else 
+    failwith "A target cannot sink a ship, yet not hit a ship"
+
 let update_hard_ai state ship_hit ship_sunk target_coord = 
   let ai = state.hard_ai in 
   if get_guess_phase ai 
@@ -474,16 +491,17 @@ let update_hard_ai state ship_hit ship_sunk target_coord =
   then begin
     let random_ai = smart_to_random ai in 
     {state with hard_ai = random_ai} end
-  else begin
-    if ship_hit && ship_sunk then 
-      let random_ai = smart_to_random ai in 
-      {state with hard_ai = random_ai}
-    else if ship_hit && (not ship_sunk) then state
-    else if (not ship_hit) && (not ship_sunk) then 
-      let new_smart_ai = update_smart_after_miss ai in 
-      {state with hard_ai = new_smart_ai}
-    else 
-      failwith "A target cannot sink a ship, yet not hit a ship" end
+  else 
+    update_hard_smart_mode state ai ship_hit ship_sunk
+(* if ship_hit && ship_sunk then 
+   let random_ai = smart_to_random ai in 
+   {state with hard_ai = random_ai}
+   else if ship_hit && (not ship_sunk) then state
+   else if (not ship_hit) && (not ship_sunk) then 
+   let new_smart_ai = update_smart_after_miss ai in 
+   {state with hard_ai = new_smart_ai}
+   else 
+   failwith "A target cannot sink a ship, yet not hit a ship" end *)
 
 let target_insane_ai state = 
   let ai = state.hard_ai in 
@@ -496,6 +514,24 @@ let target_insane_ai state =
     let (chosen_target, new_ai) = smart_target ai in 
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
+
+(** update_insane_smart_mode state ai ship_hit ship_sunk] updates the [ai]
+    in [state] when the [ai] is in smart mode to account for [ship_hit] and 
+    pship_sunk].  Works only for insane Ai.
+
+    Requires: [ai] is in smart target mode already. 
+    Raises: [A target cannot sink a ship, yet not hit a ship] if
+    [ship_hit] is [true] but [ship_sunk] is [false] or vice versa. *)
+let update_insane_smart_mode state ai ship_hit ship_sunk = 
+  if ship_hit && ship_sunk then 
+    let insane_ai = smart_to_insane ai in 
+    {state with hard_ai = insane_ai}
+  else if ship_hit && (not ship_sunk) then state
+  else if (not ship_hit) && (not ship_sunk) then 
+    let new_insane_ai = update_smart_after_miss ai in 
+    {state with hard_ai = new_insane_ai}
+  else 
+    failwith "A target cannot sink a ship, yet not hit a ship"
 
 let update_insane_ai state ship_hit ship_sunk target_coord = 
   let ai = state.hard_ai in 
@@ -510,16 +546,22 @@ let update_insane_ai state ship_hit ship_sunk target_coord =
   then begin
     let random_ai = smart_to_random ai in 
     {state with hard_ai = random_ai} end
-  else begin
-    if ship_hit && ship_sunk then 
-      let insane_ai = smart_to_insane ai in 
-      {state with hard_ai = insane_ai}
-    else if ship_hit && (not ship_sunk) then state
-    else if (not ship_hit) && (not ship_sunk) then 
-      let new_insane_ai = update_smart_after_miss ai in 
-      {state with hard_ai = new_insane_ai}
-    else 
-      failwith "A target cannot sink a ship, yet not hit a ship" end
+  else 
+    update_insane_smart_mode state ai ship_hit ship_sunk
+
+(* else begin
+   if ship_hit && ship_sunk then 
+    let insane_ai = smart_to_insane ai in 
+    {state with hard_ai = insane_ai}
+   else if ship_hit && (not ship_sunk) then state
+   else if (not ship_hit) && (not ship_sunk) then 
+    let new_insane_ai = update_smart_after_miss ai in 
+    {state with hard_ai = new_insane_ai}
+   else 
+    failwith "A target cannot sink a ship, yet not hit a ship" end *)
+
+
+(* powerup related code *)
 
 (** [powerup_to_string powerup] converts the powerup_type [powerup] to the 
     appropriate string name of the type. *)
@@ -530,7 +572,9 @@ let powerup_to_string powerup =
   | InstaKill -> "instakill"
 
 (** [string_to_powerup str ] converts [str] to the appropriate
-    powerup_type [powerup] to the . *)
+    powerup_type [powerup] to the . 
+    Raises: ["Violates preconditions: must be parsed as a proper powerup"] 
+    if [str] is not one of [squarehit, rehit or instakill]. *)
 let string_to_powerup str = 
   if str = "squarehit" then SquareHit 
   else if str = "rehit" then ReHit
@@ -555,24 +599,37 @@ let get_player_powerups player state =
   | Player1 -> state.player_1_inv
   | Player2 -> state.player_2_inv 
 
+(** [(>>=) f (x, y) player powerup_type m] acts as a monad bind, determing
+    if a target at [x] [y] is a [Success] hit or a [Failure] 
+    and then applying [f] to successes only to create a new monad of [Success]
+    or [Failure].*)
 let (>>=) f (x, y) player powerup_type m  =
   match m with
   | Success (state, hit_miss_status, ship_sunk) -> 
     f (x, y) player powerup_type state hit_miss_status ship_sunk 
   | Failure _ as f -> f
 
+(** [(<<>>) m] converts a [Success/Failure] target monad to 
+    either a [Usable of state hit sunk] if [Success] or [Unusable] otherwise. *)
 let (<<>>) m = 
   match m with 
   | Success (state, hit_miss_status, ship_sunk) -> 
     Usable (state, hit_miss_status, ship_sunk)
   | Failure _ -> Unusable
 
+(** [monad_target (x, y) player powerup_type state hit_miss_status ship_sunk]
+    targetts location [x] [y] for the [player] with [powerup_type]
+    and updates [hit_miss_status] and [ship_sunk] with the new
+    hit or miss and sunk statuses.  *) 
 let monad_target (x, y) player powerup_type state hit_miss_status ship_sunk =  
   match target_ship (x, y) player state with
   | Success (state', hit', sunk') ->
     Success (state', (hit' || hit_miss_status), ship_sunk || sunk')
   | Failure _ as f-> f
 
+(** [update_state_powerups (x, y) player powerup_type state hit sunk]
+    updates the [player] powerup inventory with [powerup_type] powerup
+    and is the new updated state and if the shio was hit and siunk.  *)
 let update_state_powerups (x, y) player powerup_type state hit sunk = 
   match player with 
   | Player1 ->  
@@ -584,6 +641,9 @@ let update_state_powerups (x, y) player powerup_type state hit sunk =
       List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in 
     Success ({state with player_2_inv = newlist}, hit, sunk)
 
+(** [process_square_hits x y player state powerup_type] is the result
+    of using an squarehit at [x] [y] for [player] in [state] 
+    with [poweryp_type] powerup. It is either [Usable] or [Unsuable]. *)
 let process_square_hits x y player state powerup_type = 
   target_ship (x, y) player state
   |> (>>=) monad_target (x + 1, y) player powerup_type
@@ -592,11 +652,16 @@ let process_square_hits x y player state powerup_type =
   |> (>>=) update_state_powerups (x, y) player powerup_type
   |> (<<>>)
 
+(** [process_rehit x y player state powerup_type] is the result
+    of using an rehit at [x] [y] for [player] in [state] 
+    with [poweryp_type] powerup. It is either [Usable] or [Unsuable]. *)
 let process_rehit x y player state powerup_type =
   target_ship (x, y) player state
   |> (>>=) update_state_powerups (x, y) player powerup_type
   |> (<<>>) 
 
+(** [get_ship_dict x y player state] is the ship dictionary 
+    of [player]'s opponent.  *)
 let get_ship_dict x y player state = 
   match player with 
   | Player1 ->
@@ -604,40 +669,74 @@ let get_ship_dict x y player state =
   | Player2 -> 
     state.player_1_ship_dict
 
+(** [make_ship_sink x y player state] converts the entire ship with 
+    coordinate [x][y] to be completed damaged for [player]. *)
 let make_ship_sink x y player state = 
   let ship_dict = get_ship_dict x y player state in 
   Battleship.get_ship_coordinates x y ship_dict
 
+(** [handle_instakill_hit player player_dict coords state powerup] updates 
+    [state] after a hit target for instakill for [player]. In particular,
+    the ship dictionary, grid guesses and inventory are updated. 
+
+    It will always return [Usable] with ship hit and ship sunk as [true].
+
+    Requires: 
+    Do not use [target]'s new state used as [state] for this function. *)
+let handle_instakill_hit player player_dict coords state powerup = 
+  match player with
+  | Player1 -> let newlist = 
+                 List.filter (fun pow -> (pow <> powerup)) state.player_1_inv in
+    Usable ({state with 
+             player_2_ship_dict = 
+               player_dict;
+             player_1_grid_guesses = 
+               coords @ state.player_1_grid_guesses;
+             player_1_inv = newlist}, true, true)
+  | Player2 -> let newlist = 
+                 List.filter (fun pow -> (pow <> powerup)) state.player_2_inv in
+    Usable({state with 
+            player_1_ship_dict = 
+              player_dict;
+            player_2_grid_guesses = 
+              coords @ state.player_2_grid_guesses;
+            player_2_inv = newlist}, true, true)
+
+(** [handle_instakill_miss player state powerup] updates [state]
+    after a miss target for instakill for [player]. 
+
+    It will always return [Usable] with ship hit and ship sunk as [false].
+
+    Requires: [target]'s new state used as [state] for this function. *)
+let handle_instakill_miss player state powerup = 
+  let used_state = 
+    match player with
+    | Player1 -> 
+      let newlist = 
+        List.filter (fun pow -> (pow <> powerup)) state.player_1_inv in
+      {state with player_1_inv = newlist}
+    | Player2 -> 
+      let newlist = 
+        List.filter (fun pow -> (pow <> powerup)) state.player_2_inv in
+      {state with player_2_inv = newlist} in 
+  Usable (used_state, false, false)
+
+(** [process_instakill x y player state powerup_type] is the result
+    of using an instakill at [x] [y] for [player] in [state] 
+    with [poweryp_type] powerup. It is either [Usable] or [Unsuable]. *)
 let process_instakill x y player state powerup_type = 
   match target_ship (x, y) player state with 
-  | Success (new_state, hit, sunk) -> 
-    if hit then 
-      let new_player_dict, ship_coords =
-        make_ship_sink x y player state in begin
+  | Success (new_state, hit, sunk) -> begin
+      if hit then 
+        let new_player_dict, ship_coords =
+          make_ship_sink x y player state in 
         let hit_ship_coords = 
           List.map (fun (x, y) -> (x, y, Hit)) ship_coords in
-        match player with
-        | Player1 ->
-          let newlist = 
-            List.filter (fun pow -> (pow <> powerup_type)) state.player_1_inv in
-          Usable ({state with 
-                   player_2_ship_dict = 
-                     new_player_dict;
-                   player_1_grid_guesses = 
-                     hit_ship_coords @ state.player_1_grid_guesses;
-                   player_1_inv = newlist}, true, true)
-        | Player2 ->
-          let newlist = 
-            List.filter (fun pow -> (pow <> powerup_type)) state.player_2_inv in
-          Usable({state with 
-                  player_1_ship_dict = 
-                    new_player_dict;
-                  player_2_grid_guesses = 
-                    hit_ship_coords @ state.player_2_grid_guesses;
-                  player_2_inv = newlist}, true, true)
-      end
-    else
-      Usable (new_state, hit, sunk)
+        handle_instakill_hit 
+          player new_player_dict hit_ship_coords state powerup_type
+      else
+        handle_instakill_miss player new_state powerup_type 
+    end
   | Failure _ -> Unusable 
 
 let update_powerup_state x y player state powerup_type =
@@ -649,8 +748,7 @@ let update_powerup_state x y player state powerup_type =
         process_rehit x y player state powerup_type
       else if powerup_type = "instakill" then 
         process_instakill x y player state powerup_type
-      else failwith "powerup must be parsed into three strings"
-    end
+      else failwith "powerup must be parsed into three strings" end
   | Player2 -> begin
       if powerup_type = "squarehit" then 
         process_square_hits x y player state powerup_type
@@ -658,9 +756,12 @@ let update_powerup_state x y player state powerup_type =
         process_rehit x y player state powerup_type
       else if powerup_type = "instakill" then 
         process_instakill x y player state powerup_type
-      else failwith "powerup must be parsed into three strings"
-    end
+      else failwith "powerup must be parsed into three strings" end
 
+(** [add_powerup player state name] adds a powerup [name] to the [player]
+    inventory in [state]. 
+
+    Requires: [name] is one of ["instakill"], ["rehit"] or ["squarehit"]. *)
 let add_powerup player state name = 
   match player with
   | Player1 ->
