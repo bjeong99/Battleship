@@ -460,9 +460,9 @@ let target_hard_ai state =
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
 
-(** update_hard_smart_mode state ai ship_hit ship_sunk] updates the [ai]
+(** [update_hard_smart_mode state ai ship_hit ship_sunk] updates the [ai]
     in [state] when the [ai] is in smart mode to account for [ship_hit] and 
-    pship_sunk]. Works only for hard Ai.
+    [ship_sunk]. Works only for hard Ai.
 
     Requires: [ai] is in smart target mode already. 
     Raises: [A target cannot sink a ship, yet not hit a ship] if
@@ -515,9 +515,9 @@ let target_insane_ai state =
     let new_state = update_targeted_locations state chosen_target in 
     (chosen_target, {new_state with hard_ai = new_ai})
 
-(** update_insane_smart_mode state ai ship_hit ship_sunk] updates the [ai]
+(** [update_insane_smart_mode state ai ship_hit ship_sunk] updates the [ai]
     in [state] when the [ai] is in smart mode to account for [ship_hit] and 
-    pship_sunk].  Works only for insane Ai.
+    [ship_sunk].  Works only for insane Ai.
 
     Requires: [ai] is in smart target mode already. 
     Raises: [A target cannot sink a ship, yet not hit a ship] if

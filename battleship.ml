@@ -90,6 +90,7 @@ let ship_length ship =
   | Cruiser  -> 3
   | Submarine  -> 2
 
+(** [string_to_powerup powerup] is the powerup corresponding to [powerup] *)
 let string_to_powerup powerup =
   let powerlow = String.lowercase_ascii powerup in 
   if powerlow = "squarehit" then SquareHit
@@ -97,6 +98,8 @@ let string_to_powerup powerup =
   else if powerlow = "instakill" then InstaKill
   else failwith "not legal powerup"
 
+
+(** [string_to_powerup powerup] is the powerup corresponding to [powerup] *)
 let powerup_to_string powerup =
   match powerup with
   | SquareHit -> "squarehit"
@@ -127,7 +130,6 @@ let pretty_print_ship_to_string ship =
   | Destroyer  -> "Destroyer"
   | Cruiser  -> "Cruiser"
   | Submarine  -> "Submarine"
-
 
 let string_to_direction str = 
   let strlow = String.lowercase_ascii str in 
@@ -161,6 +163,8 @@ let insert ship (x, y) direction dict =
 let remove ship dict = 
   List.filter (fun (ship_elt, _ ) -> ship <> ship_elt) dict
 
+(** [insert_pup powerup (x,y) dict] inserts a [powerup] at [x][y]
+    in [dict]. *)
 let insert_pup powerup (x,y) dict =
   let pup_positions = generate_pos_list (x,y) 1 Right in 
   let pp = pup_positions |> List.map (fun (x,y,z) -> (x,y)) in 
@@ -207,45 +211,93 @@ let check_ship_placed ship player game =
   | Player2 ->
     List.mem ship game.player_2_ships_remaining 
 
-let insert_ship (x, y) direction ship player dict = 
-  match player with
-  | Player1 -> 
-    if check_bounds (x, y) (ship_length ship) direction 
-    then begin
+(** [insert_ship_p1 x y ship direction player dict] inserts a ship
+    for [player] if player is player 1 at [x][y] in [direciton]
+    with [ship] in [dict]. *)
+let insert_ship_p1 x y ship direction player dict = 
+  if check_bounds (x, y) (ship_length ship) direction 
+  then begin
+    if check_ship_placed ship player dict then 
+      begin if check_unoccupied 
+          (x, y) (ship_length ship) direction dict.player_1_ships
+        then Success 
+            {dict with
+             player_1_ships_placed = ship :: dict.player_1_ships_placed;
+             player_1_ships = insert 
+                 (ship_to_string ship) (x, y) direction dict.player_1_ships;
+             player_1_ships_remaining = List.filter 
+                 (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
+        else Failure (dict, OccupiedTile)
+      end
+    else Failure (dict, OutOfShips)
+  end
+  else Failure (dict, BoundsError)
+
+(** [insert_ship_p2 x y ship direction player dict] inserts a ship
+    for [player] if player is player 2 at [x][y] in [direciton]
+    with [ship] in [dict]. *)
+let insert_ship_p2 x y ship direction player dict = 
+  if check_bounds (x, y) (ship_length ship) direction 
+  then 
+    begin
       if check_ship_placed ship player dict then 
         begin if check_unoccupied 
-            (x, y) (ship_length ship) direction dict.player_1_ships
+            (x, y) (ship_length ship) direction dict.player_2_ships
           then Success 
-              {dict with
-               player_1_ships_placed = ship :: dict.player_1_ships_placed;
-               player_1_ships = insert 
-                   (ship_to_string ship) (x, y) direction dict.player_1_ships;
-               player_1_ships_remaining = List.filter 
-                   (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
+              {dict with 
+               player_2_ships_placed = ship :: dict.player_2_ships_placed;
+               player_2_ships = insert 
+                   (ship_to_string ship) (x, y) direction dict.player_2_ships;
+               player_2_ships_remaining = List.filter 
+                   (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
           else Failure (dict, OccupiedTile)
         end
       else Failure (dict, OutOfShips)
     end
-    else Failure (dict, BoundsError)
+  else Failure (dict, BoundsError)
+
+let insert_ship (x, y) direction ship player dict = 
+  match player with
+  | Player1 -> 
+    insert_ship_p1 x y ship direction player dict
   | Player2 ->
-    if check_bounds (x, y) (ship_length ship) direction 
-    then 
-      begin
-        if check_ship_placed ship player dict then 
-          begin if check_unoccupied 
-              (x, y) (ship_length ship) direction dict.player_2_ships
-            then Success 
-                {dict with 
-                 player_2_ships_placed = ship :: dict.player_2_ships_placed;
-                 player_2_ships = insert 
-                     (ship_to_string ship) (x, y) direction dict.player_2_ships;
-                 player_2_ships_remaining = List.filter 
-                     (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
-            else Failure (dict, OccupiedTile)
-          end
-        else Failure (dict, OutOfShips)
+    insert_ship_p2 x y ship direction player dict
+(* if check_bounds (x, y) (ship_length ship) direction 
+   then begin
+   if check_ship_placed ship player dict then 
+    begin if check_unoccupied 
+        (x, y) (ship_length ship) direction dict.player_1_ships
+      then Success 
+          {dict with
+           player_1_ships_placed = ship :: dict.player_1_ships_placed;
+           player_1_ships = insert 
+               (ship_to_string ship) (x, y) direction dict.player_1_ships;
+           player_1_ships_remaining = List.filter 
+               (fun elt -> elt <> ship) dict.player_1_ships_remaining} 
+      else Failure (dict, OccupiedTile)
+    end
+   else Failure (dict, OutOfShips)
+   end
+   else Failure (dict, BoundsError)
+   | Player2 ->
+   if check_bounds (x, y) (ship_length ship) direction 
+   then 
+   begin
+    if check_ship_placed ship player dict then 
+      begin if check_unoccupied 
+          (x, y) (ship_length ship) direction dict.player_2_ships
+        then Success 
+            {dict with 
+             player_2_ships_placed = ship :: dict.player_2_ships_placed;
+             player_2_ships = insert 
+                 (ship_to_string ship) (x, y) direction dict.player_2_ships;
+             player_2_ships_remaining = List.filter 
+                 (fun elt -> elt <> ship) dict.player_2_ships_remaining} 
+        else Failure (dict, OccupiedTile)
       end
-    else Failure (dict, BoundsError)
+    else Failure (dict, OutOfShips)
+   end
+   else Failure (dict, BoundsError) *)
 
 let empty_board () = 
   Array.make_matrix 10 10 Emoji.water_wave
@@ -338,7 +390,6 @@ let change_to_damage (x, y) dict =
         (x, y) t ((ship, change_damage_list (x, y) lst []) :: acc)
   in change_to_damage_helper (x, y) dict []
 
-
 let remaining_ships player game = 
   match player with
   | Player1 -> List.length game.player_1_ships_remaining
@@ -362,6 +413,8 @@ let check_ship_can_be_removed ship player game =
   |> List.map ship_to_string
   |> List.mem ship
 
+(** [remove_ship_helper ship player game] updates [game]
+    for [player] when they remove [ship] from [game]. *)
 let remove_ship_helper ship player game = 
   match player with
   | Player1 -> {
@@ -384,7 +437,6 @@ let remove_ship_helper ship player game =
 let remove_ship ship player game = 
   if not (check_ship_can_be_removed ship player game) then game
   else 
-    (*let () = print_endline ship in*)
     remove_ship_helper ship player game
 
 let check_all_ships_damaged dict = 
@@ -445,6 +497,48 @@ let ship_type_to_ship_name ship =
   | Cruiser  -> "cruiser"
   | Submarine  -> "submarine"
 
+(** [randomly_lay_down_p1 game] is the new game
+    with ONE randomly chosen ship placed in a random location in 
+    a random direction for the indicated [player].
+    THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
+    AT THAT LOCATION, for example due to another ship
+    in the way, or going off the board.
+
+    Requires: The player has at least one ship remaining to place on 
+    the board. *)
+let randomly_lay_down_p1 game = 
+  let () = Random.self_init () in 
+  let remaining_ships_num = List.length game.player_1_ships_remaining in 
+  let random_ship = List.nth (game.player_1_ships_remaining 
+                              |> List.map ship_type_to_ship_name) 
+      (Random.int remaining_ships_num) in 
+  let random_direction = List.nth direction_list 
+      (Random.int (List.length direction_list)) in 
+  let pairs_list = create_pairs c_ROWS c_COLS in 
+  let random_position = choose_target pairs_list in 
+  (random_position, random_direction, random_ship)
+
+(** [let randomly_lay_down_p2   game] is the new game
+    with ONE randomly chosen ship placed in a random location in 
+    a random direction for the indicated [player].
+    THERE IS NO GUARANTEE THAT THE SHIP CAN BE PLACED
+    AT THAT LOCATION, for example due to another ship
+    in the way, or going off the board.
+
+    Requires: The player has at least one ship remaining to place on 
+    the board. *)
+let randomly_lay_down_p2 game = 
+  let () = Random.self_init () in 
+  let remaining_ships_num = List.length game.player_2_ships_remaining in 
+  let random_ship = List.nth (game.player_2_ships_remaining 
+                              |> List.map ship_type_to_ship_name) 
+      (Random.int remaining_ships_num) in 
+  let random_direction = List.nth direction_list 
+      (Random.int (List.length direction_list)) in 
+  let pairs_list = create_pairs c_ROWS c_COLS in 
+  let random_position = choose_target pairs_list in 
+  (random_position, random_direction, random_ship)
+
 (** [randomly_laydown_ships_helper player game] is the new game
     with ONE randomly chosen ship placed in a random location in 
     a random direction for the indicated [player].
@@ -457,27 +551,9 @@ let ship_type_to_ship_name ship =
 let randomly_laydown_ships_helper player game = 
   match player with
   | Player1 ->
-    let () = Random.self_init () in 
-    let remaining_ships_num = List.length game.player_1_ships_remaining in 
-    let random_ship = List.nth (game.player_1_ships_remaining 
-                                |> List.map ship_type_to_ship_name) 
-        (Random.int remaining_ships_num) in 
-    let random_direction = List.nth direction_list 
-        (Random.int (List.length direction_list)) in 
-    let pairs_list = create_pairs c_ROWS c_COLS in 
-    let random_position = choose_target pairs_list in 
-    (random_position, random_direction, random_ship)
+    randomly_lay_down_p1 game
   | Player2 -> 
-    let () = Random.self_init () in 
-    let remaining_ships_num = List.length game.player_2_ships_remaining in 
-    let random_ship = List.nth (game.player_2_ships_remaining 
-                                |> List.map ship_type_to_ship_name) 
-        (Random.int remaining_ships_num) in 
-    let random_direction = List.nth direction_list 
-        (Random.int (List.length direction_list)) in 
-    let pairs_list = create_pairs c_ROWS c_COLS in 
-    let random_position = choose_target pairs_list in 
-    (random_position, random_direction, random_ship)
+    randomly_lay_down_p2 game
 
 (** [random_ship player game] will randomly place ONE ship for 
     the [player] and create a new game with 
@@ -503,12 +579,6 @@ let random_ship player game =
     the board.*)
 let randomly_laydown_ships game = 
   randomly_laydown_ships_helper Player2 game
-
-let string_of_pair (x, y) = 
-  "(" ^ string_of_int x ^ "," ^ string_of_int y ^ ")"
-
-let print_pairs_list lst = 
-  List.map string_of_pair lst |> List.map print_endline |> ignore
 
 (** [get_unvisited_loc dict] is all unvisited coordianteds based
     on [dict]. *)
@@ -552,9 +622,12 @@ let assign_powerups player game =
     {game with 
      player_2_powerups = assign_three_random_emojis game.player_2_ships}
 
+(**[empty_powerup ()] is a matrix of no powerups, on wave emojis.  *)
 let empty_powerup () = 
   Array.make_matrix 10 10 Emoji.water_wave
 
+(**[make_powerup_grid grid dict] is the grid that updates[grid] based with
+   powerups where there are no coordinates in [dict].  *)
 let rec make_powerup_grid grid dict  = 
   match dict with
   | [] -> grid
@@ -567,17 +640,6 @@ let rec make_powerup_grid grid dict  =
     then let () = (grid.(y).(x) <- Emoji.skull) in make_powerup_grid grid t 
     else failwith "Cannot get"
 
-let string_of_matrix_2 matrix = 
-  let init_list = ref [] in 
-  for i = 0 to (c_ROWS - 1) do
-    let s = ref "" in 
-    for j = 0 to (c_COLS - 1) do 
-      s := !s ^ " " ^ matrix.(i).(j) 
-    done;
-    init_list :=  !init_list @ [!s];
-  done;
-  !init_list
-
 (** [print_power_ups player game] prints the powerups of the player
     to screen. 
     Used for dbugging purposes. *)
@@ -586,13 +648,13 @@ let print_power_ups player game =
   | Player1 -> 
     game.player_1_powerups 
     |> make_powerup_grid (empty_powerup ())
-    |> string_of_matrix_2
+    |> string_of_matrix
     |> List.map print_endline
     |> ignore
   | Player2 ->
     game.player_2_powerups 
     |> make_powerup_grid (empty_powerup ())
-    |> string_of_matrix_2
+    |> string_of_matrix
     |> List.map print_endline
     |> ignore
 
@@ -607,11 +669,14 @@ let check_coord_in_powerups x y player battleship =
     |> List.map (fun (x, y, name) -> (x, y))
     |> List.mem (x, y) 
 
+(** [get_powerup_name_helper x y powerup_dict] is the name of the powerup
+    in [powerup_dict] at [x] [y].
 
-
+    Raises: [Couldn not find powerup] if [x][y]
+     does not correspond to a powerup. *)
 let rec get_powerup_name_helper x y powerup_dict =
   match powerup_dict with 
-  | [] -> failwith "Coul not find powerup"
+  | [] -> failwith "Could not find powerup"
   | (x', y', powerup) :: t ->
     if x' = x && y' = y then powerup_to_string powerup 
     else get_powerup_name_helper x y t
@@ -625,6 +690,8 @@ let get_powerup_name x y player battleship =
     battleship.player_2_powerups 
     |> get_powerup_name_helper x y
 
+(** [point_to_ship_name x y player_list] is [Some] of the ship name
+    corresponding to [x][y] is in [player_list] and [None] otherwise.  *)
 let rec point_to_ship_name x y player_list = 
   match player_list with 
   | [] -> None
@@ -633,6 +700,8 @@ let rec point_to_ship_name x y player_list =
     if List.mem (x, y) coord_lst then Some ship_name
     else point_to_ship_name x y t
 
+(** [change_ship_dict_to_damaged ship_name dict acc] changes
+    the entire [dict] to damaged for [ship_name] only.  *)
 let rec change_ship_dict_to_damaged ship_name dict acc = 
   match dict with 
   | [] -> (List.rev acc , [])
