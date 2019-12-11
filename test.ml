@@ -320,7 +320,9 @@ let get_option_value (action: State.action) =
 
 (** [make_state_player_test name state player_bool player_win] is an OUnit2 test
     named [name] that compares the various player functions in State with the 
-    expected [player_bool] and [player_win] values. *)
+    expected [player_bool] and [player_win] values. It also compares the 
+    [target_action] of the targeting function based on the targeted coordinates
+    [x] and[y]. *)
 let make_state_player_test
     name
     state 
@@ -352,7 +354,7 @@ let make_state_player_test
     the [state] with the [expected_string] output
     for [player].  
     It also asserts the equality of where the [player] has
-    guessed in [state] and *)
+    guessed in [state]. *)
 let make_state_test 
     name  
     state
@@ -387,6 +389,9 @@ let num_tiles = 100
 
 let board_pairs = create_pairs 10 10 
 
+(** [repeatedly_garget test_result point_acc n targeting_function state] 
+    repeatedly targets in a given [state] with a specific [targeting_function] [n]
+    number of times and collects the targeted coordinates in [points_acc]. *)
 let rec repeatedly_target test_result points_acc n targeting_function state = 
   if n = 0 then 
     test_result && 
@@ -436,28 +441,37 @@ let make_state_ai_surrounding
         (get_surrounding_positions (x, y) state);
     )
 
+(** [ocean_row] is a string that represents a row in an empty board. *)
 let ocean_row = 
   " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
   " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ " " ^ water_wave ^ 
   " " ^ water_wave ^ " " ^ water_wave 
+
+(** [ocean] is a list of [ocean_row]s that represents an empty board. *)
 let ocean = 
   [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row;
    ocean_row; ocean_row; ocean_row; ocean_row; ocean_row]
 
+(** [question_row] is a string that represents a row in an empty guess board. *)
 let question_row = 
   " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ 
   "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" ^ " " ^ "?" 
 
+(** [no_guesses] is a list of [question_row]s that represents an emtpy guess
+    board. *)
 let no_guesses = 
   [question_row; question_row; question_row; question_row; question_row;
    question_row; question_row; question_row; question_row; question_row]
 
+(** [empty_player1_dict] returns an empty Battleship.list_t for player 1. *)
 let empty_player1_dict = 
   Battleship.empty |> get_player_dict (choose_player true)
 
+(** [empty_player2_dict] returns an empty Battleship.list_T for player 2.*)
 let empty_player2_dict = 
   Battleship.empty |> get_player_dict (choose_player false)
 
+(** [one_ship_in_dict] returns a Battleship.list_t that contains only one ship.*)
 let one_ship_in_dict = 
   let insert_bs = insert_ship (5, 5) Right Destroyer Player1 Battleship.empty
   in 
@@ -465,9 +479,13 @@ let one_ship_in_dict =
   | Success x -> get_player_dict (choose_player true) x
   | _ -> failwith ""
 
+(** [initial_state] returns an initial state with everything empty for player 1
+    and player 2.*)
 let initial_state = init_state true false empty_player1_dict empty_player2_dict
 
-let one_ship_in_dict_sunk = 
+(** [one_ship_target_repeat] returns a state in which the one ship had been 
+    repeatedly targeted except for one part of the ship. *)
+let one_ship_target_repeat n (x,y) = 
   let init_state = init_state true false one_ship_in_dict one_ship_in_dict in
   let rec loop_to_target n (x, y) updated_state = 
     match n with 
@@ -477,9 +495,7 @@ let one_ship_in_dict_sunk =
       | Success (t, _, _) -> loop_to_target (n-1) (x + 1, y) t
       | Failure (t, _) -> failwith "failure"
   in 
-  loop_to_target 2 (6,5) init_state
-
-
+  loop_to_target n (x,y) init_state
 
 let state_tests = [
   make_state_player_test
@@ -507,8 +523,16 @@ let state_tests = [
     (5,5);
 
   make_state_player_test
+    "test with non_empty and one hit"
+    (one_ship_target_repeat 1 (6,5))
+    true
+    false
+    (true, false,true)
+    (5,5);
+
+  make_state_player_test
     "test with non_empty and all sunk"
-    one_ship_in_dict_sunk
+    (one_ship_target_repeat 2 (6,5))
     true
     true
     (true, true, true)
@@ -524,6 +548,43 @@ let state_tests = [
     ocean
     no_guesses;
 
+  make_state_test
+    "one ship"
+    (State.init_state true false one_ship_in_dict empty_player2_dict)
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses
+    ocean
+    no_guesses;
+
+  make_state_test
+    "one ship hit once"
+    (one_ship_target_repeat 1 (5,5))
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    [question_row; question_row; question_row; question_row; question_row; 
+     " ? ? ? ? ? X ? ? ? ?"; question_row; question_row; question_row; 
+     question_row]
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 🔥 D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses;
+
+  make_state_test
+    "one ship hit once"
+    (one_ship_target_repeat 4 (5,5))
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 D  D  D  🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    [question_row; question_row; question_row; question_row; question_row; 
+     " ? ? ? ? ? X X X O ?"; question_row; question_row; question_row; 
+     question_row]
+    [ocean_row; ocean_row; ocean_row; ocean_row; ocean_row; 
+     " 🌊 🌊 🌊 🌊 🌊 🔥 🔥 🔥 🌊 🌊"; ocean_row; ocean_row; ocean_row; 
+     ocean_row]
+    no_guesses;
 
   make_state_ai_target_test
     "empty easy AI target"
@@ -555,6 +616,7 @@ let state_tests = [
     10
     10
     [];
+
   make_state_ai_target_test
     "empty medium AI target"
     (State.initialize_ai true false 
