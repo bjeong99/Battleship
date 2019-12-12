@@ -420,8 +420,6 @@ let rec place_player_ships_randomly state battleship ai_status diff ai player =
   then begin
     if not ai_status then delay (); ANSITerminal.erase Screen; delay ();
     ContinueGame (state, battleship, ai_status, diff, ai) end
-  (* place_player_ships state battleship ai_status diff ai player *)
-  (* ContinueGame (state, battleship, ai_status, diff, ai) *)
   else 
     let ai_result = 
       battleship 
@@ -730,17 +728,10 @@ let resolve_state_change
       (Some (state |> update_player)) 
       battleship ai_status diff ai
   else if player = false && diff = AIHard then 
-    (* let () = delay () in 
-       ANSITerminal.(print_string [green] 
-                    ("\nPass the computer to " ^ string_opp_player ^ " .\n\n"));  *)
     rec_func 
       (Some (update_hard_ai state hit sunk (x + 1, y + 1) |> update_player)) 
       battleship ai_status diff ai
-  else if 
-    player = false && diff = AIInsane then 
-    (* let () = delay () in 
-       ANSITerminal.(print_string [green] 
-                      ("\nPass the computer to " ^ string_opp_player ^ " .\n\n"));  *)
+  else if player = false && diff = AIInsane then 
     rec_func 
       (Some (update_insane_ai state hit sunk (x + 1, y + 1) |> update_player))
       battleship ai_status diff ai

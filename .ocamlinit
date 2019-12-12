@@ -1,6 +1,7 @@
 #require "oUnit";;
 #require "ANSITerminal";;
 #require "emoji";;
+#require "Graphics";;
 #directory "_build";;
 #load "hard_ai.cmo";;
 #load "battleship.cmo";;

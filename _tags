@@ -1,3 +1,3 @@
 <{listDictionary,treeDictionary,dictionarySet,engine}.ml>: coverage
 <test.{byte,native}>: coverage
-true: package(oUnit),package(ANSITerminal), package(emoji)
+true: package(oUnit),package(ANSITerminal), package(emoji), package(Graphics)

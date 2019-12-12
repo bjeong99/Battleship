@@ -3,3 +3,4 @@ PKG oUnit
 PKG yojson
 PKG ANSITerminal
 PKG emoji
+PKG Graphics

@@ -1,3 +1,61 @@
+(* 
+TEST PLAN
+
+Automatic testing:
+  We tested State, Battleship, Command and parts of Hard Ai automatically
+
+  We manually tested main to play the game. 
+
+  We choose to white box test command, hence the many tests in command, because
+  we wanted to know that player command swould register corretly. In order to do
+  this we looked at what the code was inside of command, checking each match case 
+  and each if expression to see if we could reach all teh cases. This meant that
+  we extensively tested command. 
+
+  We also extensively tested battleship with all its functions, not using white
+  box testing primarily because it was very difficult to reach that many lines
+  of code with all the match cases. We did try to vary our inputs to try
+  to achieve a large code coverage. In addition, we tested a variety of functions
+  that wwas used as helpers in battleship, making sure that every facet of the 
+  data structure worked correctly.
+
+  In state, our goal was the same. We similarly looked at the all the functions
+  for the state data structure, adn which ever one was a query or manipualtor
+  function we would test etensively. Of course, we also tested in the generator
+  toi initialize state was correct as well. Even though we did many tests with 
+  state, it is not possible for us to cover every corner in the given time frame
+  we had, though we have some measure that we found the manjoir bugs through
+  our extensive tests.
+
+  State also allwoed us to do extensive tests on the Ai including hard Ai. Since
+  state contains an Ai, which comes from the hard AI data structure, by trsting
+  ai moves on state, we could also check the ai performance. In thios regard
+  we primarily testedf the Ai through stress testing, making sure that it was
+  always able to target an enemy square without mistake.Note that the stress
+  tests were done with many randomizerd testing or the Ai since the ai
+  will choose to target randomly.
+
+  Finally, we tested the main module by hand extensively to make sure that the
+  game worked the way we wanted. BEcause we know that main sued hard ai, state
+  command and battleship, when we tested all the others, we knew main would
+  have less major bugs lying around. When testing main by hand, we focused
+  omn varying different targets, playing with and without AI, trargeting the s
+  same locations as the other player, checking vitory conditions and making sure
+  that the game did not crash in any way. We also teste the use of powerups in
+  this way, making sure we could use the powerups and that it would show up 
+  properly in order to be sued by either player. 
+
+  The similar situation for testing by hand occureed for the gui
+  as well, in which we tested coordinates adn different targeting lcoations
+  and the enter button, as well as victory conditions.
+
+  In summary, we felt we made an honest effort to test our system to make sure
+  that any major and minor bugs were fliushed out. We would love to add in
+  more unit tests, of course, but we ran out of time.
+*)
+
+
+
 open OUnit2
 open State
 open Battleship

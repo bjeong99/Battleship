@@ -1,33 +1,36 @@
-Does not currently require Graphics library to be installed on your computer.
+# Battleship
+## Final project for CS 3110
 
-Run Make Build
-Run Make Play and start the game
-  For comments on how to play the game and other general comments, read
-  the MS 1 progress report.
-  The game also gives instructions
+---
 
-General Instructions:
-To play game
-Make Play
-Enter yes or no if you want an AI
-To choose AI difficulty, enter medium or easy
-Note that commas are needed for the next part in placing ships
-To place ship, 
-  do x_coordinate, y_coordinate, direction, and ship type
-  where ship type is aircraftcarrier, battleship, destroyer, cruiser or submarine
-  and direction is left, right, up or down
+## System Requirements:
 
-Note that commas are needed for the next part in targeting
-to target do,
-  target, x_coordinate, y_coordinate
+- Graphics, Emoji, ANSITerminal and OUnit are required packages
+- XQuartz for MacOS is also required to work with Graphics
+- X11 (I hope) works for windows
 
-At any time, to quit, enter quit
+## To extract docs
+- make docs
+
+## To Compile:
+- make build
+
+## To Test:
+- make test
+
+## To Play standard game that we demoed in section
+- make play
+
+## To Play gui game (Easter egg)
+- make visual
 
 ## Features:
 
 ### AI:
 - Player can choose if they want to play against another human or an AI
+  - type in yes or no or quit
 - Four difficulties if AI is chosen - easy, medium, hard and insane
+  - type in easy, medium, hard or insane 
 
 ### Ship Placement Phase:
 - Player can place ship where they want
@@ -35,6 +38,29 @@ At any time, to quit, enter quit
 - Player can randomly place ships at any point in placement if they feel lazy 
    (though they cannot remove those ships that are randomly placed)
 - Command to allow player to indicate he/she is finished placing ships
+
+- type in manually e.g.
+  [x] [y] down battleship 
+  for example 1 1 down aircraftcarrier
+  or 2 5 right submarine 
+  or A 6 up cruiser
+  or h 9 left destroyer
+
+  (No commas required)
+
+- when you type in manually, type
+  finish 
+  to complete 
+
+- to remove ships randomly (which you cannot do with random)
+  random [ship] where ship could be 
+    battleship, cruiser, destroyer, aircraftcarrier
+
+- type in random to randomly lay down ships (at any point)
+  e.g. just random
+
+- type in clear to clear
+  - two clears required to move to next player
 
 - AI will always lay down ships randomly on map
 
@@ -57,10 +83,24 @@ At any time, to quit, enter quit
 - Rehit to target on multiple turns
 - Instakill to sink a ship immediately if hit
 
-### GUI
+- to use powerups, say:
+  use [powerup] at [x] [y] 
+  where powerup is one of "rehit", "square", "instakill"
+  and x and y is some valid coordinate
+
+### GUI (Easter egg)
 - used OCaml Graphics module to implement gui for battleship
 - only functionality to lay down ships randomly, no AI, no powerups
 - players 1 and 2 keep guessing until one of the players destroys all the others ships
+- no warning of when ship is sunk
+- Press enter to advance turn as a next button
+- press on the left hand side to target grid as player 2 and press on grid on right hand side to target as player 1
+- cannot target two locations in one turn
+- red displays a hit for player 1
+- magenta is a hit for player 2
+- white is a miss
+- currently, 2.0 second time delay implemented to change players between targeting phases, if you want to change, change the delay to whatever you want by changing the c_TIME_DELAY constant at the top of visual.ml to whatever value
+- displays victory message for winner
 
 ## Design Philosophy (Module Layout):
 
