@@ -241,7 +241,7 @@ let print_player2_add_ships state battleship ai_status diff ai =
 let rec delay input =
   ANSITerminal.(print_string [green]
                   "Type clear to wipe the screen.\n");
-  match String.lowercase_ascii (read_line input) with
+  match String.trim (String.lowercase_ascii (read_line input)) with
   | "clear" -> ANSITerminal.erase Screen
   | _ -> delay input
 
@@ -417,7 +417,11 @@ let rec place_single_ai_ship battleship player str =
     if the AI  gives a quit, finishturn or random command.  *)
 let rec place_player_ships_randomly state battleship ai_status diff ai player = 
   if Battleship.(remaining_ships (choose_player player) battleship) = 0 
-  then ContinueGame (state, battleship, ai_status, diff, ai)
+  then begin
+    if not ai_status then delay (); ANSITerminal.erase Screen; delay ();
+    ContinueGame (state, battleship, ai_status, diff, ai) end
+  (* place_player_ships state battleship ai_status diff ai player *)
+  (* ContinueGame (state, battleship, ai_status, diff, ai) *)
   else 
     let ai_result = 
       battleship 
@@ -469,6 +473,7 @@ let rec place_player_ships state battleship ai_status diff ai player =
        ANSITerminal.(print_string [green] "\nPass computer to player 2.\n")
      else 
        ANSITerminal.(print_string [green] "\nPass computer to player 1.\n"));
+    if not ai_status then delay (); ANSITerminal.erase Screen; delay ();
     ContinueGame (state, battleship', ai_status, diff, ai)
   | PGRandom ->
     place_player_ships_randomly state battleship ai_status diff ai player
@@ -720,21 +725,30 @@ let get_difficulty_targeting_func diff =
 let resolve_state_change 
     player rec_func x y state battleship 
     ai_status diff ai hit sunk string_opp_player = 
-  if player = false && diff = AIHard then let () = delay () in 
-    ANSITerminal.(print_string [green] 
-                    ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+  if (not player) && (ai_status) && (diff = AIEasy || diff = AIMedium) then
+    rec_func 
+      (Some (state |> update_player)) 
+      battleship ai_status diff ai
+  else if player = false && diff = AIHard then 
+    (* let () = delay () in 
+       ANSITerminal.(print_string [green] 
+                    ("\nPass the computer to " ^ string_opp_player ^ " .\n\n"));  *)
     rec_func 
       (Some (update_hard_ai state hit sunk (x + 1, y + 1) |> update_player)) 
       battleship ai_status diff ai
-  else if player = false && diff = AIInsane then let () = delay () in 
-    ANSITerminal.(print_string [green] 
-                    ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+  else if 
+    player = false && diff = AIInsane then 
+    (* let () = delay () in 
+       ANSITerminal.(print_string [green] 
+                      ("\nPass the computer to " ^ string_opp_player ^ " .\n\n"));  *)
     rec_func 
       (Some (update_insane_ai state hit sunk (x + 1, y + 1) |> update_player))
       battleship ai_status diff ai
-  else let () = delay () in 
+  else 
+    let () = delay () in 
     ANSITerminal.(print_string [green] 
                     ("\nPass the computer to " ^ string_opp_player ^ " .\n\n")); 
+    let () = delay () in
     rec_func (Some (state |> update_player)) battleship ai_status diff ai
 
 (** [handle_succ 
@@ -751,9 +765,10 @@ let handle_succ
          power_name = get_powerup_name x y (choose_player player) battleship in 
        State.add_powerup (bool_to_player player) state' power_name
      else state') in
-  after_move_message ();
-  print_boards_side_by_side player new_state;
-  print_sunk_hit_message ship_hit ship_sunk;
+  if player = true || (player = false && ai_status = false) then 
+    (after_move_message ();
+     print_boards_side_by_side player new_state;
+     print_sunk_hit_message ship_hit ship_sunk);
   if check_victory (bool_to_player player) new_state 
   then let () = print_winner player ai_status in VictoryGame
   else resolve_state_change player rec_func x y new_state battleship
@@ -844,9 +859,10 @@ let rec target state_option battleship ai_status diff ai =
   let state = get_state_from state_option in 
   let player = get_current_player state in
   let color = choose_color player in 
-  print_player_move_message player;
-  print_boards_side_by_side player state;
-  print_targeting_rules color;
+  if player = true || (player = false && ai_status = false) then
+    (print_player_move_message player;
+     print_boards_side_by_side player state;
+     print_targeting_rules color);
   if player = false && ai_status then 
     let targeting_func = get_difficulty_targeting_func diff in 
     let (x, y), new_state = targeting_func state in 
@@ -1125,11 +1141,11 @@ let () =
   |> (>>>) print_player1_add_ships
   |> (>>>) place_player1_ships 
   |> (>>>) update_player1_powerups 
-  |> (>>>) print_player1_powerups
+  (* |> (>>>) print_player1_powerups *)
   |> (>>>) print_player2_add_ships
   |> (>>>) place_player2_ships
   |> (>>>) update_player2_powerups
-  |> (>>>) print_player2_powerups
+  (* |> (>>>) print_player2_powerups *)
   |> (>>>) print_entering_targeting_phase 
   |> (>>>) build_in_game_state
   |> (>>>) target
